@@ -1,0 +1,274 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import yaml
+import heapq
+import re
+import jinja2
+import copy
+from jinja2 import Template
+
+SCRIPT_DIRPATH = os.path.dirname( __file__ )
+SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
+PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
+
+PROV_MACHINES_DIRPATH = os.path.join(PROVISION_ROOT_DIRPATH, 'machines')
+PROV_DIRECTIVES_DIRPATH = os.path.join(PROVISION_ROOT_DIRPATH, 'directives')
+PROV_FILES_DIRPATH = os.path.join(PROVISION_ROOT_DIRPATH, 'files')
+
+MAX_DIRECTIVE_ORDER = 9999999
+
+jinja2.Environment(autoescape=False)
+
+
+_directive_filename_map = None
+_directive_filepath_map = None
+_directive_sortorder_map = None
+def _get_directive_filename_map():
+    global _directive_filename_map
+    global _directive_sortorder_map
+    global _directive_filepath_map
+    
+    print "_get_directive_filename_map entered"
+    
+    if _directive_filename_map is None:
+        _directive_filename_map = []
+        _directive_sortorder_map = {}
+        _directive_filepath_map = {}
+        directive_files_dirpath = os.path.join(os.path.dirname(__file__),
+                                            '..',
+                                            'provision',
+                                            'directives')
+        print "directive files dirpath: {}".format(directive_files_dirpath)
+        for filename in os.listdir(directive_files_dirpath):
+            print "listdir result: {}".format(filename)
+            if os.path.isfile(os.path.join(directive_files_dirpath,filename)):
+                print "examining: {}".format(filename)
+                
+                directive_match = re.search(r"^(\d+)\_(.*)\.directive\.yml$", filename)
+                if directive_match:
+                    sort_order = int(directive_match.group(1))
+                    directive_name = directive_match.group(2)
+                    
+                    print "sort_order: {}, directive_name: {}".format(sort_order, directive_name)
+                    
+                    _directive_sortorder_map[directive_name] = sort_order
+                    
+                    
+                    print "adding filepath[{}]: {}".format(directive_name, os.path.join(directive_files_dirpath, filename))
+                    _directive_filepath_map[directive_name] = \
+                        os.path.join(directive_files_dirpath, filename)
+                    
+                    heapq.heappush(_directive_filename_map,
+                                   (sort_order,
+                                    directive_name,
+                                    os.path.join(directive_files_dirpath, filename)))
+                                   
+                ansible_match = re.search(r"^(\d+)\_(.*)\.ansible\.yml$", filename)
+                if ansible_match:
+                    sort_order = int(ansible_match.group(1))
+                    directive_name = ansible_match.group(2)
+                    
+                    print "sort_order: {}, directive_name: {}".format(sort_order, directive_name)
+                    
+                    _directive_sortorder_map[directive_name] = sort_order
+                    _directive_filepath_map[directive_name] = \
+                        os.path.join(directive_files_dirpath, filename)
+                    
+                    heapq.heappush(_directive_filename_map,
+                                   (sort_order,
+                                    directive_name,
+                                    os.path.join(directive_files_dirpath, filename)))
+                    
+                    
+    return _directive_filename_map
+
+def _get_directive_index(directive_name):
+    global _directive_sortorder_map
+    _get_directive_filename_map()
+    try:
+        return _directive_sortorder_map[directive_name]
+    except KeyError:
+        pass
+
+def _get_directive_filepath(directive_name):
+    global _directive_filepath_map
+    print "_get_directive_filepath entered (directive: {})".format(directive_name)
+    _get_directive_filename_map()
+    try:
+        return _directive_filepath_map[directive_name]
+    except KeyError:
+        pass
+
+def _gen_tmp_playbook():
+    global machine
+    global machine_config
+    
+    filepath = "/tmp/provision_{}.playbook".format(machine)
+    with open(filepath, "w") as fh:
+        order, txt = \
+            _playbook_from_list(
+                directives=machine_config['directives'],
+                parameters=machine_config['parameters']
+            )
+        fh.write(txt)
+                                                     #parameters=params))
+    return filepath 
+
+def _gen_tmp_ansible_hostsfile():
+    global machine
+    global machine_config
+    filepath = "/tmp/provision_{}.hosts".format(machine)
+    
+    hostrecs = machine_config['hosts']
+    
+    # this should read the host groups from the machine config and write something appropriate
+    
+    with open(filepath, "w") as fh:
+        fh.write("[all]\n")
+        
+        for hostrec in hostrecs:
+            fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
+        fh.write("\n")
+        
+    fh.close()
+        
+
+def _playbook_from_list(**kwargs):
+    try:
+        params = kwargs['parameters']
+    except KeyError:
+        params = {}
+    
+    try:
+        retlist= []
+        
+        print "directives({}), parameters({})".format(kwargs['directives'], params)
+        for directives_dict in kwargs['directives']:
+            ordernum, playbook_text = _playbook_from_dict(directives=directives_dict,
+                                                        parameters=params)
+            #print "o: {}, t: {}".format(ordernum, playbook_text)
+            heapq.heappush(retlist, (ordernum, playbook_text))
+        
+        ret = ""
+        for item in sorted(retlist):
+            order, txt = item
+            ret += "{}\n".format(txt)
+        #print "_playbook_from_list returning: ({}, {})".format(MAX_DIRECTIVE_ORDER, ret)
+        return (MAX_DIRECTIVE_ORDER, ret)
+    except KeyError:
+        raise RequiredParameterDirectivesNotProvided()
+   
+def _merge_args(args_base, args_adding):
+    #print "_merge_args: base({}), adding({})".format(args_base, args_adding)
+    ret = copy.copy(args_base)
+    for k,y in args_adding.iteritems():
+        ret[k] = y
+    #print "_merge_args returning {}".format(ret)
+    return ret
+   
+class RequiredParameterDirectivesNotProvided(Exception):
+    pass
+   
+class DirectivesDictContainedNoDirectives(Exception):
+    pass
+   
+def _playbook_from_dict(**kwargs):
+    
+    try:
+        params = kwargs['parameters']
+    except KeyError:
+        params = {}    
+    
+    try:
+        directives_dict = kwargs['directives']
+        print "directives({}), parameters({})".format(kwargs['directives'], params)
+        
+        try:
+            params = _merge_args(params, directives_dict['parameters'])
+        except KeyError:
+            pass
+        
+        try:
+            return _playbook_from_list(directives=directives_dict['directives'],
+                                       parameters=params)
+        except KeyError:
+            
+            try:
+                directive_name = directives_dict['directive']
+                directive_index = _get_directive_index(directive_name)
+                directive_filepath = _get_directive_filepath(directive_name)
+            
+                try:
+                    with open(directive_filepath, "r") as fh:
+                        dict_yaml_text = None
+                        if params:
+                            #print "params!: {}".format(params)
+                            initial_template_text = fh.read()
+                            #print "init temp txt: {}".format(initial_template_text)
+                            dict_yaml_text = Template(initial_template_text).render(params)
+                            #print "cp -after"
+                        else:
+                            dict_yaml_text = Template(fh.read()).render()
+            
+                        yaml_struct = yaml.load(dict_yaml_text)
+                        if type(yaml_struct) is list and len(yaml_struct) == 1:
+                            yaml_struct = yaml_struct[0]
+                            
+                        if 'directives' in yaml_struct.keys() or \
+                           'files' in yaml_struct.keys():
+                            #print "calling with yaml struct"
+                            return _playbook_from_dict(directives=yaml_struct, parameters=params)
+                        else:
+                            return (directive_index, "{}\n".format(dict_yaml_text))
+                        #return (directive_index, template_text)
+                except jinja2.exceptions.TemplateSyntaxError:
+                    #print "ERR: Template syntax error in {}".format(directive_filepath)
+                    raise
+            except KeyError:
+                raise DirectivesDictContainedNoDirectives
+    except KeyError:
+        raise RequiredParameterDirectivesNotProvided()
+
+        
+def _run_ansible_playbook(**kwargs):
+    pass
+
+machine, machine_config = None, None
+def provision_machine(machine_name):
+    global machine
+    global machine_config
+    machine = machine_name
+
+    with open (os.path.join(PROV_MACHINES_DIRPATH, "{}.machine.yml".format(machine_name)), "r") as machine_def_str: 
+        
+        # generate the playbook
+        rendered_machine_def_str = Template(machine_def_str.read()).render(**os.environ)
+        machine_config = yaml.load(rendered_machine_def_str)
+        tmp_ansible_hostsfile_filepath = _gen_tmp_ansible_hostsfile()
+        tmp_playbook_filepath = _gen_tmp_playbook()
+        
+        # run it
+        run_ansible_playbook(filepath=tmp_playbook_filepath,
+                             hostsfilepath=tmp_ansible_hostsfile_filepath)
+
+if __name__ == '__main__':
+
+    # --- command-line options, crawl params
+    # ---------------------------------------------------------------
+    parser = argparse.ArgumentParser(
+        description='provision a server.',
+        prog='corrigible',
+        usage='%(prog)s <pos arg> [options]'
+    )
+    for arg in ['machine',"--playbook-output-file","--generate-playbook-only"]:
+        parser.add_argument(arg)
+    args = vars(parser.parse_args())
+    action, options = None, {}
+    for opt, val in args.iteritems():
+        options[opt] = val
+
+    
+    provision_machine(options['machine'])
+    
