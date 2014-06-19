@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import copy
 from subprocess import call
 
 script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
@@ -17,12 +18,21 @@ os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 class TestMachineConfig(unittest.TestCase):
     def test_machine_config(self):
         
-        outputfn = "/tmp/corrigible-test-output.yml"
+        output_playbook_filepath = "/tmp/corrigible-test-output.yml"
+        output_hosts_filepath = "/tmp/corrigible-test-hosts-output.hosts"
         
         # remove the test output file if it exists
-        if os.path.isfile(outputfn):
-            os.remove(outputfn)
+        if os.path.isfile(output_playbook_filepath):
+            os.remove(output_playbook_filepath)
+        if os.path.isfile(output_hosts_filepath):
+            os.remove(output_hosts_filepath)
             
-        call([corrigible_exec_filepath, "test_variable_substitution", "--generate-playbook-only", "--playbook-output-file={}".format(outputfn)])
+        call([corrigible_exec_filepath, "test_machine_config", "--generate-files-only", "--playbook-output-file={}".format(output_playbook_filepath), "--hosts-output-file={}".format(output_hosts_filepath)], env=os.environ.copy())
         
-        self.assertTrue(os.path.isfile(outputfn))
+        self.assertTrue(os.path.isfile(output_playbook_filepath))
+        self.assertTrue(os.path.isfile(output_hosts_filepath))
+        
+
+if __name__ == '__main__':
+    unittest.main()   
+    
