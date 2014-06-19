@@ -262,13 +262,12 @@ if __name__ == '__main__':
         prog='corrigible',
         usage='%(prog)s <pos arg> [options]'
     )
-    for arg in ['machine',"--playbook-output-file","--generate-playbook-only"]:
+    for arg in ['machine',"--playbook-output-file","--hosts-output-file","--generate-files-only"]:
         parser.add_argument(arg)
     args = vars(parser.parse_args())
     action, options = None, {}
     for opt, val in args.iteritems():
         options[opt] = val
-
     
     provision_machine(options['machine'])
     
