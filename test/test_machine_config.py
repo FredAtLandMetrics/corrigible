@@ -15,7 +15,7 @@ os.environ['CORRIGIBLE_DIRECTIVES'] = directives_config_dirpath
 os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 
 class TestMachineConfig(unittest.TestCase):
-    def test_variable_substitution(self):
+    def test_machine_config(self):
         
         outputfn = "/tmp/corrigible-test-output.yml"
         
@@ -24,3 +24,5 @@ class TestMachineConfig(unittest.TestCase):
             os.remove(outputfn)
             
         call([corrigible_exec_filepath, "test_variable_substitution", "--generate-playbook-only", "--playbook-output-file={}".format(outputfn)])
+        
+        self.assertTrue(os.path.isfile(outputfn))
