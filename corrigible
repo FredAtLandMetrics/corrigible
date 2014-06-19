@@ -101,38 +101,33 @@ def _get_directive_filepath(directive_name):
     except KeyError:
         pass
 
-def _gen_tmp_playbook():
-    global machine
-    global machine_config
+#def _gen_playbook():
     
-    filepath = "/tmp/provision_{}.playbook".format(machine)
-    with open(filepath, "w") as fh:
-        order, txt = \
-            _playbook_from_list(
-                directives=machine_config['directives'],
-                parameters=machine_config['parameters']
-            )
-        fh.write(txt)
-                                                     #parameters=params))
-    return filepath 
+    #filepath = "/tmp/provision_{}.playbook".format(machine)
+    #with open(filepath, "w") as fh:
+        #order, txt = \
+            #_playbook_from_list(
+                #directives=machine_config['directives'],
+                #parameters=machine_config['parameters']
+            #)
+        #fh.write(txt)
+                                                     ##parameters=params))
+    #return filepath 
 
-def _gen_tmp_ansible_hostsfile():
-    global machine
-    global machine_config
-    filepath = "/tmp/provision_{}.hosts".format(machine)
+#def _gen_ansible_hostsfile():
+    #filepath = "/tmp/provision_{}.hosts".format(machine)
+    #hostrecs = machine_config['hosts']
     
-    hostrecs = machine_config['hosts']
+    ## this should read the host groups from the machine config and write something appropriate
     
-    # this should read the host groups from the machine config and write something appropriate
-    
-    with open(filepath, "w") as fh:
-        fh.write("[all]\n")
+    #with open(filepath, "w") as fh:
+        #fh.write("[all]\n")
         
-        for hostrec in hostrecs:
-            fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
-        fh.write("\n")
+        #for hostrec in hostrecs:
+            #fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
+        #fh.write("\n")
         
-    fh.close()
+    #fh.close()
         
 
 def _playbook_from_list(**kwargs):
@@ -235,23 +230,67 @@ def _playbook_from_dict(**kwargs):
 def _run_ansible_playbook(**kwargs):
     pass
 
-machine, machine_config = None, None
-def provision_machine(machine_name):
-    global machine
-    global machine_config
-    machine = machine_name
+def provision_machine(opts):
+    #machine = machine_name
 
-    with open (os.path.join(PROV_MACHINES_DIRPATH, "{}.machine.yml".format(machine_name)), "r") as machine_def_str: 
+    #with open (os.path.join(PROV_MACHINES_DIRPATH, "{}.machine.yml".format(machine_name)), "r") as machine_def_str: 
         
-        # generate the playbook
-        rendered_machine_def_str = Template(machine_def_str.read()).render(**os.environ)
-        machine_config = yaml.load(rendered_machine_def_str)
-        tmp_ansible_hostsfile_filepath = _gen_tmp_ansible_hostsfile()
-        tmp_playbook_filepath = _gen_tmp_playbook()
+        ## generate the playbook
+        ##rendered_machine_def_str = Template(machine_def_str.read()).render(**os.environ)
+        ##machine_config = yaml.load(rendered_machine_def_str)
+        #tmp_ansible_hostsfile_filepath = _gen_ansible_hostsfile()
+        #tmp_playbook_filepath = _gen_playbook()
         
-        # run it
-        run_ansible_playbook(filepath=tmp_playbook_filepath,
-                             hostsfilepath=tmp_ansible_hostsfile_filepath)
+        ## run it
+    run_ansible_playbook(filepath=ansible_playbook_filepath(opts),
+                         hostsfilepath=ansible_hostsfile_filepath(opts))
+
+machine_conf = None
+def machine_config(opts):
+    global machine_conf
+    if machine_conf is None:
+        machine_name = opts["machine"]
+        with open (os.path.join(PROV_MACHINES_DIRPATH, "{}.machine.yml".format(machine_name)), "r") as machine_def_fh: 
+            rendered_machine_def_str = Template(machine_def_str.read()).render(**os.environ)
+            machine_conf = yaml.load(rendered_machine_def_fh)
+    return machine_conf
+    
+
+def machine_name(opts):
+    return opts["machine"]
+
+def ansible_hostsfile_filepath(opts):
+    try:
+        return opts["hosts-output-file"]
+    except KeyError:
+        return "/tmp/provision_{}.hosts".format(machine_name(opts))
+
+def ansible_playbook_filepath(opts):
+    try:
+        return opts["playbook-output-file"]
+    except KeyError:
+        return "/tmp/provision_{}.playbook".format(machine_name(opts))
+
+def write_ansible_hosts(opts):
+    hostrecs = machine_config(opts)['hosts']
+    
+    # this should read the host groups from the machine config and write something appropriate
+    
+    with open(ansible_hostsfile_filepath(opts), "w") as fh:
+        fh.write("[all]\n")
+        
+        for hostrec in hostrecs:
+            fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
+        fh.write("\n")
+
+def write_ansible_playbook(opts):
+    with open(ansible_playbook_filepath(opts), "w") as fh:
+        order, txt = \
+            _playbook_from_list(
+                directives=machine_config(opts)['directives'],
+                parameters=machine_config(opts)['parameters']
+            )
+        fh.write(txt)
 
 if __name__ == '__main__':
 
@@ -259,15 +298,34 @@ if __name__ == '__main__':
     # ---------------------------------------------------------------
     parser = argparse.ArgumentParser(
         description='provision a server.',
-        prog='corrigible',
-        usage='%(prog)s <pos arg> [options]'
+        prog='corrigible'
     )
-    for arg in ['machine',"--playbook-output-file","--hosts-output-file","--generate-files-only"]:
-        parser.add_argument(arg)
+    
+    progargs = ( ( "machine", "positional", "the name of the machine (or group) whose config will be parsed" ),
+                 ( "playbook-output-file", "full", "the playbook output file (for testing, use discouraged)"),
+                 ( "hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
+                 ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ) )
+    
+    for arginfo in progargs:
+        optname, opttype, opthelp = arginfo
+        if opttype == "positional":
+            parser.add_argument(optname, help=opthelp)
+        elif opttype == "short":
+            parser.add_argument("--{}".format(optname), help=opthelp, action="store_true") 
+        elif opttype == "full":
+            parser.add_argument("--{}".format(optname), help=opthelp) 
+    
     args = vars(parser.parse_args())
-    action, options = None, {}
+    options = {}
     for opt, val in args.iteritems():
         options[opt] = val
     
-    provision_machine(options['machine'])
+    #options = vars(parser.parse_args())
+    write_ansible_hosts(options)
+    write_ansible_playbook(options)
+    
+    print "opt[generate-files-only]: {}".format(options['generate-files-only'])
+    
+    if not options["generate-files-only"]:
+        provision_machine(options)
     
