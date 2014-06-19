@@ -1,0 +1,4 @@
+hosts:
+    - hostname: 'testhost'
+      hostgroup: 'testgroup'
+      ip_address: 1.2.3.4
