@@ -2,3 +2,10 @@ hosts:
     - hostname: 'testhost'
       hostgroup: 'testgroup'
       ip_address: 1.2.3.4
+
+parameters:
+    sudouser: ubuntu
+    sudo: yes
+    
+directives:
+    - directive: apt_upgrade
