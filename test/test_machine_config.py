@@ -4,9 +4,10 @@ import unittest
 import os
 import copy
 import re
+import yaml
 from subprocess import call
 
-from corrigible.lib.provision_files import directive_index
+from corrigible.lib.provision_files import directive_index, directive_filepath
 
 script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
 machine_config_dirpath = os.path.join(script_dirpath,'resources','machines')
@@ -38,7 +39,12 @@ class TestMachineConfig(unittest.TestCase):
         
 
     def regen_test_hostsfile_gen_files(self, **kwargs):
-        self.rerun_corrigible(machine_config="test_hostsfile_generation", generate_files_only=True)
+        self.rerun_corrigible(machine_config="test_hostsfile_generation",
+                              generate_files_only=True)
+        
+    def regen_test_simple_directives(self, **kwargs):
+        self.rerun_corrigible(machine_config="test_simple_directives",
+                              generate_files_only=True)
         
     def hosts_groups_from_file(self, hosts_filepath):
         ret = []
@@ -78,6 +84,12 @@ class TestMachineConfig(unittest.TestCase):
             
         return ret
     
+    def playbook_as_struct(self):
+        ret = None
+        with open(PLAYBOOK_FILEPATH__MACHINECONF_TEST, 'r') as fh:
+            ret = yaml.load(fh)
+        return ret
+        
     def test_machine_config_output_files_exist(self):
         self.regen_test_hostsfile_gen_files()
         self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
@@ -94,14 +106,24 @@ class TestMachineConfig(unittest.TestCase):
         
     def test_directive_index(self):
         dt_index = directive_index('directives_test')
-        print "dt_index: {}".format(dt_index)
+        #print "dt_index: {}".format(dt_index)
         self.assertTrue(dt_index == 57)
         d_index = directive_index('apt_upgrade')
-        print "d_index: {}".format(d_index)
+        #print "d_index: {}".format(d_index)
         self.assertTrue(d_index == 19)
         
-    #def test_parameter_substitution(self):
+    def test_directive_filepath(self):
+        dt_filepath = directive_filepath('directives_test');
+        print "dt_filepath: {}".format(dt_filepath)
+        self.assertTrue(dt_filepath == os.path.abspath(os.path.join(script_dirpath,'resources','directives','57_directives_test.directive.yml')))
         
+    def test_parameter_substitution(self):
+        self.regen_test_simple_directives()
+        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
+        s = self.playbook_as_struct()
+        self.assertTrue(s[0]['user'] == 'ubuntu')
+        self.assertTrue(s[0]['sudo'] == True)
 
 if __name__ == '__main__':
     unittest.main()   
