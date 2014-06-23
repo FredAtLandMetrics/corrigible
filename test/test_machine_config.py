@@ -23,14 +23,22 @@ HOSTS_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
 
 class TestMachineConfig(unittest.TestCase):
 
-    def regen_test_hostsfile_gen_files(self, **kwargs):
+    def rerun_corrigible(self, **kwargs):
         # remove the test output file if it exists
         if os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST):
             os.remove(PLAYBOOK_FILEPATH__MACHINECONF_TEST)
         if os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST):
             os.remove(HOSTS_FILEPATH__MACHINECONF_TEST)
             
-        call([corrigible_exec_filepath, "test_hostsfile_generation", "--generate-files-only", "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
+        try:
+            assert(bool(kwargs['generate_files_only']))
+            call([corrigible_exec_filepath, kwargs['machine_config'], "--generate-files-only", "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
+        except KeyError:
+            call([corrigible_exec_filepath, kwargs['machine_config'], "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
+        
+
+    def regen_test_hostsfile_gen_files(self, **kwargs):
+        self.rerun_corrigible(machine_config="test_hostsfile_generation", generate_files_only=True)
         
     def hosts_groups_from_file(self, hosts_filepath):
         ret = []
@@ -84,10 +92,6 @@ class TestMachineConfig(unittest.TestCase):
         self.assertTrue(len(lines) == 1)
         self.assertTrue(lines[0] == "testhost ansible_ssh_host=1.2.3.4")
         
-    #def test_directive_filename_map(self):
-        #from corrigible import directive_filename_map
-        #map = directive_filename_map()
-        #print "map: {}".format(map)
     def test_directive_index(self):
         dt_index = directive_index('directives_test')
         print "dt_index: {}".format(dt_index)
@@ -95,6 +99,9 @@ class TestMachineConfig(unittest.TestCase):
         d_index = directive_index('apt_upgrade')
         print "d_index: {}".format(d_index)
         self.assertTrue(d_index == 19)
+        
+    #def test_parameter_substitution(self):
+        
 
 if __name__ == '__main__':
     unittest.main()   
