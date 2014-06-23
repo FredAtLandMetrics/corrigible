@@ -3,13 +3,14 @@
 import argparse
 import os
 import yaml
-#import heapq
+import heapq
 #import re
 import jinja2
 import copy
 #from lib.provision_files import 
 from jinja2 import Template
 from corrigible.lib.dirpaths import machines_dirpath, directives_dirpath, files_dirpath
+from corrigible.lib.provision_files import directive_index, directive_filepath
 
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
@@ -93,7 +94,7 @@ class RequiredParameterDirectivesNotProvided(Exception):
    
 class DirectivesDictContainedNoDirectives(Exception):
     pass
-   
+      
 def _playbook_from_dict(**kwargs):
     
     try:
@@ -117,11 +118,11 @@ def _playbook_from_dict(**kwargs):
             
             try:
                 directive_name = directives_dict['directive']
-                directive_index = directive_index(directive_name)
-                directive_filepath = directive_filepath(directive_name)
+                directive_ndx = directive_index(directive_name)
+                #directive_filepath = directive_filepath(directive_name)
             
                 try:
-                    with open(directive_filepath, "r") as fh:
+                    with open(directive_filepath(directive_name), "r") as fh:
                         dict_yaml_text = None
                         if params:
                             #print "params!: {}".format(params)
@@ -141,7 +142,7 @@ def _playbook_from_dict(**kwargs):
                             #print "calling with yaml struct"
                             return _playbook_from_dict(directives=yaml_struct, parameters=params)
                         else:
-                            return (directive_index, "{}\n".format(dict_yaml_text))
+                            return (directive_ndx, "{}\n".format(dict_yaml_text))
                         #return (directive_index, template_text)
                 except jinja2.exceptions.TemplateSyntaxError:
                     #print "ERR: Template syntax error in {}".format(directive_filepath)
