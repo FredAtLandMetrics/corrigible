@@ -1,7 +1,7 @@
-- hosts: {{ hosts }}
+- hosts: all
   user: {{ sudouser }}
-  sudo: yes
+  sudo: {{ sudo }}
   tasks:
     - name: ensure latest os version
-      apt: upgrade=safe update_cache=yes name={{ apt_packages_to_install }} state=present
+      apt: upgrade=safe update_cache=yes
 
