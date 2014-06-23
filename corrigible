@@ -102,7 +102,7 @@ def directive_filename_map():
                     
     return _directive_filename_map
 
-def _get_directive_index(directive_name):
+def directive_index(directive_name):
     global _directive_sortorder_map
     directive_filename_map()
     try:
@@ -110,9 +110,9 @@ def _get_directive_index(directive_name):
     except KeyError:
         pass
 
-def _get_directive_filepath(directive_name):
+def directive_filepath(directive_name):
     global _directive_filepath_map
-    print "_get_directive_filepath entered (directive: {})".format(directive_name)
+    print "directive_filepath entered (directive: {})".format(directive_name)
     directive_filename_map()
     try:
         return _directive_filepath_map[directive_name]
@@ -210,8 +210,8 @@ def _playbook_from_dict(**kwargs):
             
             try:
                 directive_name = directives_dict['directive']
-                directive_index = _get_directive_index(directive_name)
-                directive_filepath = _get_directive_filepath(directive_name)
+                directive_index = directive_index(directive_name)
+                directive_filepath = directive_filepath(directive_name)
             
                 try:
                     with open(directive_filepath, "r") as fh:
