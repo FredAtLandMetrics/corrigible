@@ -70,7 +70,7 @@ def _ensure_directive_filename_map():
 
 def directive_filename_map():
     _ensure_directive_filename_map()
-    return _directive_filename_map()
+    return _directive_filename_map
 
 def directive_sortorder_map():
     _ensure_directive_filename_map()
@@ -86,9 +86,9 @@ def directive_index(directive_name):
 
 def directive_filepath(directive_name):
     global _directive_filepath_map
-    print "directive_filepath entered (directive: {})".format(directive_name)
+    #print "directive_filepath entered (directive: {})".format(directive_name)
     _ensure_directive_filename_map()
     try:
-        return directive_filename_map()[directive_name]
+        return os.path.abspath(_directive_filepath_map[directive_name])
     except KeyError:
-        pass
+        return None
