@@ -21,14 +21,14 @@ HOSTS_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
 
 class TestMachineConfig(unittest.TestCase):
 
-    def regen_test_machine_config_files(self, **kwargs):
+    def regen_test_hostsfile_gen_files(self, **kwargs):
         # remove the test output file if it exists
         if os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST):
             os.remove(PLAYBOOK_FILEPATH__MACHINECONF_TEST)
         if os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST):
             os.remove(HOSTS_FILEPATH__MACHINECONF_TEST)
             
-        call([corrigible_exec_filepath, "test_machine_config", "--generate-files-only", "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
+        call([corrigible_exec_filepath, "test_hostsfile_generation", "--generate-files-only", "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
         
     def hosts_groups_from_file(self, hosts_filepath):
         ret = []
@@ -69,12 +69,12 @@ class TestMachineConfig(unittest.TestCase):
         return ret
     
     def test_machine_config_output_files_exist(self):
-        self.regen_test_machine_config_files()
+        self.regen_test_hostsfile_gen_files()
         self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
         self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
         
     def test_machine_config_hosts_file_accurate(self):
-        self.regen_test_machine_config_files()
+        self.regen_test_hostsfile_gen_files()
         hostgroups = self.hosts_groups_from_file(HOSTS_FILEPATH__MACHINECONF_TEST)
         self.assertTrue('all' in hostgroups)
         self.assertTrue(len(hostgroups) == 1)
