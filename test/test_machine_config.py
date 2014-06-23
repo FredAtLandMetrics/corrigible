@@ -15,22 +15,26 @@ os.environ['CORRIGIBLE_MACHINES'] = machine_config_dirpath
 os.environ['CORRIGIBLE_DIRECTIVES'] = directives_config_dirpath
 os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 
+PLAYBOOK_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-output.yml"
+HOSTS_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
+
 class TestMachineConfig(unittest.TestCase):
-    def test_machine_config(self):
-        
-        output_playbook_filepath = "/tmp/corrigible-test-output.yml"
-        output_hosts_filepath = "/tmp/corrigible-test-hosts-output.hosts"
-        
+
+    def regen_test_machine_config_files(self, **kwargs):
         # remove the test output file if it exists
-        if os.path.isfile(output_playbook_filepath):
-            os.remove(output_playbook_filepath)
-        if os.path.isfile(output_hosts_filepath):
-            os.remove(output_hosts_filepath)
+        if os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST):
+            os.remove(PLAYBOOK_FILEPATH__MACHINECONF_TEST)
+        if os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST):
+            os.remove(HOSTS_FILEPATH__MACHINECONF_TEST)
             
-        call([corrigible_exec_filepath, "test_machine_config", "--generate-files-only", "--playbook-output-file={}".format(output_playbook_filepath), "--hosts-output-file={}".format(output_hosts_filepath)], env=os.environ.copy())
+        call([corrigible_exec_filepath, "test_machine_config", "--generate-files-only", "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
         
-        self.assertTrue(os.path.isfile(output_playbook_filepath))
-        self.assertTrue(os.path.isfile(output_hosts_filepath))
+    
+    def test_machine_config(self):
+        self.regen_test_machine_config_files()
+        #print "PLAYBOOK_FILEPATH__MACHINECONF_TEST, HOSTS_FILEPATH__MACHINECONF_TEST: {}, {}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST, HOSTS_FILEPATH__MACHINECONF_TEST)
+        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
         
 
 if __name__ == '__main__':

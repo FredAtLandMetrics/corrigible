@@ -13,14 +13,32 @@ SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
 PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
 
-PROV_MACHINES_DIRPATH = os.path.join(PROVISION_ROOT_DIRPATH, 'machines')
-PROV_DIRECTIVES_DIRPATH = os.path.join(PROVISION_ROOT_DIRPATH, 'directives')
-PROV_FILES_DIRPATH = os.path.join(PROVISION_ROOT_DIRPATH, 'files')
+#machines_dirpath() = os.path.join(PROVISION_ROOT_DIRPATH, 'machines')
+#directives_dirpath = os.path.join(PROVISION_ROOT_DIRPATH, 'directives')
+#files_dirpath = os.path.join(PROVISION_ROOT_DIRPATH, 'files')
 
 MAX_DIRECTIVE_ORDER = 9999999
 
 jinja2.Environment(autoescape=False)
 
+
+def envvar_cap_var(environment_variable_name, **kwargs):
+    try:
+        return os.environ[environment_variable_name]
+    except KeyError:
+        try:
+            return kwargs['default']
+        except KeyError:
+            return None
+    
+def machines_dirpath():
+    return envvar_cap_var('CORRIGIBLE_MACHINES',default='/usr/local/etc/corrigible/machines')
+
+def directives_dirpath():
+    return envvar_cap_var('CORRIGIBLE_DIRECTIVES',default='/usr/local/etc/corrigible/directives')
+
+def files_dirpath():
+    return envvar_cap_var('CORRIGIBLE_FILES',default='/usr/local/etc/corrigible/files')
 
 _directive_filename_map = None
 _directive_filepath_map = None
@@ -233,7 +251,7 @@ def _run_ansible_playbook(**kwargs):
 def provision_machine(opts):
     #machine = machine_name
 
-    #with open (os.path.join(PROV_MACHINES_DIRPATH, "{}.machine.yml".format(machine_name)), "r") as machine_def_str: 
+    #with open (os.path.join(machines_dirpath(), "{}.machine.yml".format(machine_name)), "r") as machine_def_str: 
         
         ## generate the playbook
         ##rendered_machine_def_str = Template(machine_def_str.read()).render(**os.environ)
@@ -248,11 +266,16 @@ def provision_machine(opts):
 machine_conf = None
 def machine_config(opts):
     global machine_conf
-    if machine_conf is None:
-        machine_name = opts["machine"]
-        with open (os.path.join(PROV_MACHINES_DIRPATH, "{}.machine.yml".format(machine_name)), "r") as machine_def_fh: 
-            rendered_machine_def_str = Template(machine_def_str.read()).render(**os.environ)
-            machine_conf = yaml.load(rendered_machine_def_fh)
+    try:
+        if machine_conf is None:
+            machine_name = opts["machine"]
+            machine_config_filepath = os.path.join(machines_dirpath(), "{}.meta".format(machine_name))
+            print "INFO: loading machine config for: {}, at {}".format(machine_name, machine_config_filepath)
+            with open (machine_config_filepath, "r") as machine_def_fh: 
+                rendered_machine_def_str = Template(machine_def_fh.read()).render(**os.environ)
+                machine_conf = yaml.load(rendered_machine_def_str)
+    except IOError:
+        print "\nERR: machine config not found at: {}, machine_config will be None\n".format(machine_config_filepath)
     return machine_conf
     
 
@@ -261,36 +284,71 @@ def machine_name(opts):
 
 def ansible_hostsfile_filepath(opts):
     try:
-        return opts["hosts-output-file"]
+        return opts["hosts_output_file"]
     except KeyError:
         return "/tmp/provision_{}.hosts".format(machine_name(opts))
 
 def ansible_playbook_filepath(opts):
     try:
-        return opts["playbook-output-file"]
+        return opts["playbook_output_file"]
     except KeyError:
         return "/tmp/provision_{}.playbook".format(machine_name(opts))
 
 def write_ansible_hosts(opts):
-    hostrecs = machine_config(opts)['hosts']
-    
+    try:
+        mconf = machine_config(opts)
+        hostrecs = mconf['hosts']
+        
+        with open(ansible_hostsfile_filepath(opts), "w") as fh:
+            fh.write("[all]\n")
+            
+            for hostrec in hostrecs:
+                fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
+            fh.write("\n")
+    except TypeError:
+        print "machine_config: {}".format(str(mconf))
+        if mconf is None:
+            print "ERR: No machine config, not writing ansible hosts file"
+            return
+        else:
+            raise
+        
+        
     # this should read the host groups from the machine config and write something appropriate
     
-    with open(ansible_hostsfile_filepath(opts), "w") as fh:
-        fh.write("[all]\n")
-        
-        for hostrec in hostrecs:
-            fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
-        fh.write("\n")
+    
 
 def write_ansible_playbook(opts):
-    with open(ansible_playbook_filepath(opts), "w") as fh:
-        order, txt = \
-            _playbook_from_list(
-                directives=machine_config(opts)['directives'],
-                parameters=machine_config(opts)['parameters']
-            )
-        fh.write(txt)
+    try:
+        mconf = machine_config(opts)
+        
+        try:
+            directives = mconf['directives']
+        except KeyError:
+            directives = {}
+            
+        try:
+            params = mconf['parameters']
+        except KeyError:
+            params = {}
+            
+        playbook_output_filepath = ansible_playbook_filepath(opts)
+        print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
+        with open(ansible_playbook_filepath(opts), "w") as fh:
+            order, txt = _playbook_from_list( directives=directives, parameters=params )
+            if bool(txt):
+                fh.write(txt)
+            else:
+                fh.write("# WARN: No directives found!\n")
+            
+    except TypeError:
+        #print "machine_config: {}".format(str(mconf))
+        if mconf is None:
+            print "ERR: No machine config, not writing ansible playbook file"
+            return
+        else:
+            raise
+        
 
 if __name__ == '__main__':
 
@@ -324,8 +382,10 @@ if __name__ == '__main__':
     write_ansible_hosts(options)
     write_ansible_playbook(options)
     
-    print "opt[generate-files-only]: {}".format(options['generate-files-only'])
+    #print "options: {}".format(str(options))
     
-    if not options["generate-files-only"]:
+    #print "opt[generate-files-only]: {}".format(options['generate_files_only'])
+    
+    if not options["generate_files_only"]:
         provision_machine(options)
     
