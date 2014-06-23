@@ -43,12 +43,12 @@ def files_dirpath():
 _directive_filename_map = None
 _directive_filepath_map = None
 _directive_sortorder_map = None
-def _get_directive_filename_map():
+def directive_filename_map():
     global _directive_filename_map
     global _directive_sortorder_map
     global _directive_filepath_map
     
-    print "_get_directive_filename_map entered"
+    print "directive_filename_map entered"
     
     if _directive_filename_map is None:
         _directive_filename_map = []
@@ -104,7 +104,7 @@ def _get_directive_filename_map():
 
 def _get_directive_index(directive_name):
     global _directive_sortorder_map
-    _get_directive_filename_map()
+    directive_filename_map()
     try:
         return _directive_sortorder_map[directive_name]
     except KeyError:
@@ -113,7 +113,7 @@ def _get_directive_index(directive_name):
 def _get_directive_filepath(directive_name):
     global _directive_filepath_map
     print "_get_directive_filepath entered (directive: {})".format(directive_name)
-    _get_directive_filename_map()
+    directive_filename_map()
     try:
         return _directive_filepath_map[directive_name]
     except KeyError:
