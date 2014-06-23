@@ -20,6 +20,6 @@ The *machines* and *directives* directories are where all the magic happens for 
 
 Once the machine file and various directive files are in place, provisioning is as simple as:
 ```shell
-corrigible my_machine
+corrigible somehost
 ```
 
