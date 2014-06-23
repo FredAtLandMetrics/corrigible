@@ -6,6 +6,8 @@ import copy
 import re
 from subprocess import call
 
+from corrigible.lib.provision_files import directive_index
+
 script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
 machine_config_dirpath = os.path.join(script_dirpath,'resources','machines')
 directives_config_dirpath = os.path.join(script_dirpath,'resources','directives')
@@ -81,6 +83,18 @@ class TestMachineConfig(unittest.TestCase):
         lines = self.hostgroup_lines(HOSTS_FILEPATH__MACHINECONF_TEST,'all')
         self.assertTrue(len(lines) == 1)
         self.assertTrue(lines[0] == "testhost ansible_ssh_host=1.2.3.4")
+        
+    #def test_directive_filename_map(self):
+        #from corrigible import directive_filename_map
+        #map = directive_filename_map()
+        #print "map: {}".format(map)
+    def test_directive_index(self):
+        dt_index = directive_index('directives_test')
+        print "dt_index: {}".format(dt_index)
+        self.assertTrue(dt_index == 57)
+        d_index = directive_index('apt_upgrade')
+        print "d_index: {}".format(d_index)
+        self.assertTrue(d_index == 19)
 
 if __name__ == '__main__':
     unittest.main()   

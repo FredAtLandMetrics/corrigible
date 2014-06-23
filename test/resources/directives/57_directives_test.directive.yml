@@ -1,0 +1,10 @@
+parameters:
+    apt_packages_to_install: 'php5,php5-gd,php5-ldap,php5-mcrypt,php5-mysql,php5-suhosin,php5-cli,make,bash,gettext,python-sphinx,icoutils,python-docutils,libmagickcore-extra,imagemagick'
+        
+directives:
+    - directive: packages
+        
+files:
+    - source: aguilas/aguilas_1.0.1.orig.tar.gz
+      destination: /tmp/aguilas_1.0.1.orig.tar.gz
+      mode: 0755
