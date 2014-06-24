@@ -1,0 +1,6 @@
+- hosts: all
+  user: {{ sudouser }}
+  sudo: {{ sudo }}
+  tasks:
+    - name: add deploy user
+      user: name=deploy comment="Deploy User" state=present

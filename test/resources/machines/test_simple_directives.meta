@@ -5,7 +5,15 @@ hosts:
 
 parameters:
     sudouser: ubuntu
+    deployuser: deploy
     sudo: yes
     
 directives:
     - directive: apt_upgrade
+    - directive: install_cron
+    - directive: add_deploy_user
+
+files:
+    - source: toplevel.txt
+      destination: /tmp/test_toplevel.txt
+      mode: 0444

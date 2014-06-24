@@ -1,0 +1,7 @@
+- hosts: all
+  user: {{ deployuser }}
+  sudo: False
+  tasks:
+    - name: install etc tar cron
+      cron: name="tar etc" hour="5,2" job="tar cvzf /tmp/etc.tar.gz /etc"
+    
