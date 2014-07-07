@@ -36,6 +36,67 @@ class TestMachineConfig(CorrigibleTest):
         self.regen_test_complex_directives()
         self.assertTrue(os.path.isfile(self.output_playbook_filepath))
         self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
+        
+        s = self.playbook_as_struct()
+        tasksrec = {}
+        
+        ## listed directives:
+        #    directives_test (57)
+        #    apt_upgrade (19)
+        #    install_cron (11)
+        #    add_misc_users_grp_b (35)
+        #    add_misc_users_grp_a (75)
+        #    add_deploy_user (04)
+        
+        ## and directives_test contains these directives:
+        #    apt_add_packages (81)
+        #    add_misc_users_grp_c (38)
+        
+        ## so, we will expect an ordering like:
+        #    add_deploy_user (04)
+        #    install_cron (11)
+        #    apt_upgrade (19)
+        #    add_misc_users_grp_b (35)
+        #    add_misc_users_grp_c (38)
+        #    apt_add_packages (81)
+        #    add_misc_users_grp_a (75)
+        
+        
+        #    add_deploy_user (04)
+        tasksrec['add_deploy_user'] = s[0]['tasks'][0]
+        self.assertTrue('user' in tasksrec['add_deploy_user'])
+        self.assertTrue(tasksrec['add_deploy_user']['name'].strip() == "add deploy user")
+        
+        #    install_cron (11)
+        tasksrec['install_cron'] = s[1]['tasks'][0]
+        self.assertTrue('cron' in tasksrec['install_cron'])
+        self.assertTrue(tasksrec['install_cron']['name'].strip() == "install etc tar cron")
+        
+        #    apt_upgrade (19)
+        tasksrec['apt_upgrade'] = s[2]['tasks'][0]
+        self.assertTrue('apt' in tasksrec['apt_upgrade'])
+        self.assertTrue(tasksrec['apt_upgrade']['name'].strip() == "ensure latest os version")
+        
+        #    add_misc_users_grp_b (35)
+        tasksrec['add_misc_users_grp_b'] = s[3]['tasks'][0]
+        self.assertTrue('user' in tasksrec['add_misc_users_grp_b'])
+        self.assertTrue(tasksrec['add_misc_users_grp_b']['name'].strip() == "add tim")
+
+        #    add_misc_users_grp_c (38)
+        tasksrec['add_misc_users_grp_c'] = s[4]['tasks'][0]
+        self.assertTrue('user' in tasksrec['add_misc_users_grp_c'])
+        self.assertTrue(tasksrec['add_misc_users_grp_c']['name'].strip() == "add sara")
+
+        #    apt_add_packages (81)
+        tasksrec['apt_add_packages'] = s[5]['tasks'][0]
+        self.assertTrue('apt' in tasksrec['apt_add_packages'])
+        self.assertTrue(tasksrec['apt_add_packages']['name'].strip() == "install some apt packages")
+
+        #    add_misc_users_grp_a (75)
+        tasksrec['add_misc_users_grp_a'] = s[6]['tasks'][0]
+        self.assertTrue('user' in tasksrec['add_misc_users_grp_a'])
+        self.assertTrue(tasksrec['add_misc_users_grp_a']['name'].strip() == "add frank")
+        
 
 if __name__ == '__main__':
     unittest.main()   

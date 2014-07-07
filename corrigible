@@ -147,7 +147,8 @@ def _playbook_from_dict(**kwargs):
                         if 'directives' in yaml_struct.keys() or \
                            'files' in yaml_struct.keys():
                             #print "calling with yaml struct"
-                            return _playbook_from_dict(directives=yaml_struct, parameters=params)
+                            _, directive_text =  _playbook_from_dict(directives=yaml_struct, parameters=params)
+                            return (directive_ndx, "{}\n".format(directive_text))
                         else:
                             return (directive_ndx, "{}\n".format(dict_yaml_text))
                         #return (directive_index, template_text)
