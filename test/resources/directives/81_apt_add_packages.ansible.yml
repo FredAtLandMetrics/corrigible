@@ -1,0 +1,6 @@
+- hosts: {{ hosts }}
+  user: {{ sudouser }}
+  sudo: yes
+  tasks:
+    - name: install some apt packages
+      apt: name={{ apt_packages_to_install }} state=present

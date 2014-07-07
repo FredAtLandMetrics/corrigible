@@ -134,6 +134,22 @@ class TestMachineConfig(unittest.TestCase):
         self.assertTrue(s[0]['user'] == 'ubuntu')
         self.assertTrue(s[0]['sudo'] == True)
 
+    def test_directive_ordering_by_index(self):
+        """after re-running corrigible on the simple directives test machine config, test that the directives are ordered as per the index indicated is each's filename"""
+        self.regen_test_simple_directives()
+        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
+        s = self.playbook_as_struct()
+        self.assertTrue('user' in s[0]['tasks'][0])
+        self.assertFalse('user' in s[1]['tasks'][0])
+        self.assertFalse('user' in s[2]['tasks'][0])
+        self.assertTrue('cron' in s[1]['tasks'][0])
+        self.assertFalse('cron' in s[0]['tasks'][0])
+        self.assertFalse('cron' in s[2]['tasks'][0])
+        self.assertTrue('apt' in s[2]['tasks'][0])
+        self.assertFalse('apt' in s[1]['tasks'][0])
+        self.assertFalse('apt' in s[0]['tasks'][0])
+
 if __name__ == '__main__':
     unittest.main()   
     

@@ -1,0 +1,22 @@
+hosts:
+    - hostname: 'testhost'
+      hostgroup: 'testgroup'
+      ip_address: 1.2.3.4
+
+parameters:
+    sudouser: ubuntu
+    deployuser: deploy
+    sudo: yes
+    
+directives:
+    - directive: directives_test
+    - directive: apt_upgrade
+    - directive: install_cron
+    - directive: add_misc_users_grp_b
+    - directive: add_misc_users_grp_a
+    - directive: add_deploy_user
+
+files:
+    - source: toplevel.txt
+      destination: /tmp/test_toplevel.txt
+      mode: 0444
