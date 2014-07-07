@@ -2,7 +2,7 @@ parameters:
     apt_packages_to_install: 'php5,imagemagick'
         
 directives:
-    - directive: add_apt_packages
+    - directive: apt_add_packages
     - directive: add_misc_users_grp_c
         
 files:

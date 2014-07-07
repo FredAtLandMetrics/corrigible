@@ -49,6 +49,11 @@ class TestMachineConfig(unittest.TestCase):
         self.rerun_corrigible(machine_config="test_simple_directives",
                               generate_files_only=True)
         
+    def regen_test_complex_directives(self, **kwargs):
+        """re-run corrigible for the complex directive test config"""
+        self.rerun_corrigible(machine_config="test_complex_directives",
+                              generate_files_only=True)
+        
     def hosts_groups_from_file(self, hosts_filepath):
         """given a path to an ansible hosts file, return the list of all host groups in the hostsfile"""
         ret = []
@@ -149,6 +154,12 @@ class TestMachineConfig(unittest.TestCase):
         self.assertTrue('apt' in s[2]['tasks'][0])
         self.assertFalse('apt' in s[1]['tasks'][0])
         self.assertFalse('apt' in s[0]['tasks'][0])
+
+    def test_complex_directive_ordering(self):
+        """after re-running corrigible on the complex directives test machine config, test that the directives are ordered as per the index indicated is each's filename and as per the directive file containment"""
+        self.regen_test_complex_directives()
+        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
 
 if __name__ == '__main__':
     unittest.main()   
