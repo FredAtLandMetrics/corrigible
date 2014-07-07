@@ -2,8 +2,6 @@
 
 import unittest
 import os
-import re
-import yaml
 
 from corrigible.lib.provision_files import directive_index, directive_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
@@ -37,58 +35,6 @@ class TestMachineConfig(CorrigibleTest):
         """re-run corrigible for the simple directive test config"""
         self.rerun_corrigible(machine_config="test_simple_directives",
                               generate_files_only=True)
-        
-    def regen_test_complex_directives(self, **kwargs):
-        """re-run corrigible for the complex directive test config"""
-        self.rerun_corrigible(machine_config="test_complex_directives",
-                              generate_files_only=True)
-        
-    def hosts_groups_from_file(self, hosts_filepath):
-        """given a path to an ansible hosts file, return the list of all host groups in the hostsfile"""
-        ret = []
-        with open(hosts_filepath) as f:
-            lines = f.readlines()
-            for l in lines:
-                m = re.match(r"^\[(.*)\]", l)
-                if m is not None:
-                    ret.append(m.group(1))
-        return ret
-    
-    def hostgroup_lines(self, hosts_filepath, hostgroup):
-        """given a path to an ansible hosts file and the name of a hostgroup in that file, return a list of all the host lines in the hostgroup section"""
-        ret = []
-        with open(hosts_filepath) as f:
-            lines = f.readlines()
-            found = False
-            for l in lines:
-                
-                # skip lines until found
-                if not found:
-                    m = re.match(r"^\[{}\]".format(hostgroup), l)
-                    if m is not None:
-                        found = True
-                    continue
-                
-                # capture lines until next group
-                m = re.match(r"^\[.*\]", l)
-                if m is None and bool(l.strip()):
-                    ret.append(l.strip())
-                    continue
-                
-                # if we get this far, it's over, return
-                break
-            
-        if not bool(ret):
-            ret = None
-            
-        return ret
-    
-    def playbook_as_struct(self):
-        """read the playbook referred to by self.output_playbook_filepath as a yaml file and return the struct"""
-        ret = None
-        with open(self.output_playbook_filepath, 'r') as fh:
-            ret = yaml.load(fh)
-        return ret
         
     def test_machine_config_output_files_exist(self):
         """test that the output files exist after rerunning corrigible using the hostsfile generation test machine config"""
@@ -143,12 +89,6 @@ class TestMachineConfig(CorrigibleTest):
         self.assertTrue('apt' in s[2]['tasks'][0])
         self.assertFalse('apt' in s[1]['tasks'][0])
         self.assertFalse('apt' in s[0]['tasks'][0])
-
-    def test_complex_directive_ordering(self):
-        """after re-running corrigible on the complex directives test machine config, test that the directives are ordered as per the index indicated is each's filename and as per the directive file containment"""
-        self.regen_test_complex_directives()
-        self.assertTrue(os.path.isfile(self.output_playbook_filepath))
-        self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
 
 if __name__ == '__main__':
     unittest.main()   
