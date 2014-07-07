@@ -1,0 +1,9 @@
+Project Status
+==============
+* Minimal suite of tests in place
+* Directives and parameter substitution working
+* Hosts and playbook files are being generated
+
+Not Yet Working
+===============
+* Simple file transfer
