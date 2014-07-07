@@ -65,7 +65,7 @@ def _playbook_from_list(**kwargs):
     try:
         retlist= []
         
-        print "directives({}), parameters({})".format(kwargs['directives'], params)
+        #print "directives({}), parameters({})".format(kwargs['directives'], params)
         for directives_dict in kwargs['directives']:
             ordernum, playbook_text = _playbook_from_dict(directives=directives_dict,
                                                         parameters=params)
@@ -104,7 +104,7 @@ def _playbook_from_dict(**kwargs):
     
     try:
         directives_dict = kwargs['directives']
-        print "directives({}), parameters({})".format(kwargs['directives'], params)
+        #print "directives({}), parameters({})".format(kwargs['directives'], params)
         
         try:
             params = _merge_args(params, directives_dict['parameters'])
@@ -178,7 +178,7 @@ def machine_config(opts):
         if machine_conf is None:
             machine_name = opts["machine"]
             machine_config_filepath = os.path.join(machines_dirpath(), "{}.meta".format(machine_name))
-            print "INFO: loading machine config for: {}, at {}".format(machine_name, machine_config_filepath)
+            #print "INFO: loading machine config for: {}, at {}".format(machine_name, machine_config_filepath)
             with open (machine_config_filepath, "r") as machine_def_fh: 
                 rendered_machine_def_str = Template(machine_def_fh.read()).render(**os.environ)
                 machine_conf = yaml.load(rendered_machine_def_str)
@@ -241,7 +241,7 @@ def write_ansible_playbook(opts):
             params = {}
             
         playbook_output_filepath = ansible_playbook_filepath(opts)
-        print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
+        #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
         with open(ansible_playbook_filepath(opts), "w") as fh:
             order, txt = _playbook_from_list( directives=directives, parameters=params )
             if bool(txt):

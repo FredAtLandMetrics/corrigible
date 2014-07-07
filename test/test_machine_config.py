@@ -122,7 +122,7 @@ class TestMachineConfig(unittest.TestCase):
     def test_directive_filepath(self):
         """test that the directive filepath method in the provision files lib is properly returning the filepath to the directive file"""
         dt_filepath = directive_filepath('directives_test');
-        print "dt_filepath: {}".format(dt_filepath)
+        #print "dt_filepath: {}".format(dt_filepath)
         self.assertTrue(dt_filepath == os.path.abspath(os.path.join(script_dirpath,'resources','directives','57_directives_test.directive.yml')))
         
     def test_parameter_substitution(self):
