@@ -2,12 +2,11 @@
 
 import unittest
 import os
-import copy
 import re
 import yaml
-from subprocess import call
 
 from corrigible.lib.provision_files import directive_index, directive_filepath
+from corrigible.test.lib.corrigible_test import CorrigibleTest
 
 script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
 machine_config_dirpath = os.path.join(script_dirpath,'resources','machines')
@@ -22,23 +21,13 @@ os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 PLAYBOOK_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-output.yml"
 HOSTS_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
 
-class TestMachineConfig(unittest.TestCase):
+class TestMachineConfig(CorrigibleTest):
 
-    def rerun_corrigible(self, **kwargs):
-        """re-run corrigible for a given machine config file"""
-        # remove the test output file if it exists
-        if os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST):
-            os.remove(PLAYBOOK_FILEPATH__MACHINECONF_TEST)
-        if os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST):
-            os.remove(HOSTS_FILEPATH__MACHINECONF_TEST)
-            
-        try:
-            assert(bool(kwargs['generate_files_only']))
-            call([corrigible_exec_filepath, kwargs['machine_config'], "--generate-files-only", "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
-        except KeyError:
-            call([corrigible_exec_filepath, kwargs['machine_config'], "--playbook-output-file={}".format(PLAYBOOK_FILEPATH__MACHINECONF_TEST), "--hosts-output-file={}".format(HOSTS_FILEPATH__MACHINECONF_TEST)], env=os.environ.copy())
+    def setUp(self):
+        self.output_playbook_filepath = PLAYBOOK_FILEPATH__MACHINECONF_TEST
+        self.output_hostsfile_filepath = HOSTS_FILEPATH__MACHINECONF_TEST
+        self.corrigible_exec_filepath = corrigible_exec_filepath
         
-
     def regen_test_hostsfile_gen_files(self, **kwargs):
         """re-run corrigible for the hostsfile generation test config"""
         self.rerun_corrigible(machine_config="test_hostsfile_generation",
@@ -95,25 +84,25 @@ class TestMachineConfig(unittest.TestCase):
         return ret
     
     def playbook_as_struct(self):
-        """read the playbook referred to by PLAYBOOK_FILEPATH__MACHINECONF_TEST as a yaml file and return the struct"""
+        """read the playbook referred to by self.output_playbook_filepath as a yaml file and return the struct"""
         ret = None
-        with open(PLAYBOOK_FILEPATH__MACHINECONF_TEST, 'r') as fh:
+        with open(self.output_playbook_filepath, 'r') as fh:
             ret = yaml.load(fh)
         return ret
         
     def test_machine_config_output_files_exist(self):
         """test that the output files exist after rerunning corrigible using the hostsfile generation test machine config"""
         self.regen_test_hostsfile_gen_files()
-        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
-        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(self.output_playbook_filepath))
+        self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         
     def test_machine_config_hosts_file_accurate(self):
         """test that the generated hosts file is accurate after rerunning corrigible using the hostsfile generation test machine config"""
         self.regen_test_hostsfile_gen_files()
-        hostgroups = self.hosts_groups_from_file(HOSTS_FILEPATH__MACHINECONF_TEST)
+        hostgroups = self.hosts_groups_from_file(self.output_hostsfile_filepath)
         self.assertTrue('all' in hostgroups)
         self.assertTrue(len(hostgroups) == 1)
-        lines = self.hostgroup_lines(HOSTS_FILEPATH__MACHINECONF_TEST,'all')
+        lines = self.hostgroup_lines(self.output_hostsfile_filepath,'all')
         self.assertTrue(len(lines) == 1)
         self.assertTrue(lines[0] == "testhost ansible_ssh_host=1.2.3.4")
         
@@ -133,8 +122,8 @@ class TestMachineConfig(unittest.TestCase):
     def test_parameter_substitution(self):
         """after re-running corrigible on the simple directives test machine config, test that basic parameter substitution is working"""
         self.regen_test_simple_directives()
-        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
-        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(self.output_playbook_filepath))
+        self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         s = self.playbook_as_struct()
         self.assertTrue(s[0]['user'] == 'ubuntu')
         self.assertTrue(s[0]['sudo'] == True)
@@ -142,8 +131,8 @@ class TestMachineConfig(unittest.TestCase):
     def test_directive_ordering_by_index(self):
         """after re-running corrigible on the simple directives test machine config, test that the directives are ordered as per the index indicated is each's filename"""
         self.regen_test_simple_directives()
-        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
-        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(self.output_playbook_filepath))
+        self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         s = self.playbook_as_struct()
         self.assertTrue('user' in s[0]['tasks'][0])
         self.assertFalse('user' in s[1]['tasks'][0])
@@ -158,8 +147,8 @@ class TestMachineConfig(unittest.TestCase):
     def test_complex_directive_ordering(self):
         """after re-running corrigible on the complex directives test machine config, test that the directives are ordered as per the index indicated is each's filename and as per the directive file containment"""
         self.regen_test_complex_directives()
-        self.assertTrue(os.path.isfile(PLAYBOOK_FILEPATH__MACHINECONF_TEST))
-        self.assertTrue(os.path.isfile(HOSTS_FILEPATH__MACHINECONF_TEST))
+        self.assertTrue(os.path.isfile(self.output_playbook_filepath))
+        self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
 
 if __name__ == '__main__':
     unittest.main()   
