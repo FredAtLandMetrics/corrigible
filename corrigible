@@ -67,8 +67,10 @@ def _playbook_from_list(**kwargs):
         
         #print "directives({}), parameters({})".format(kwargs['directives'], params)
         for directives_dict in kwargs['directives']:
+            directive_file_stack_push(directives_dict['directive'])
             ordernum, playbook_text = _playbook_from_dict(directives=directives_dict,
-                                                        parameters=params)
+                                                          parameters=params)
+            directive_file_stack_pop()
             #print "o: {}, t: {}".format(ordernum, playbook_text)
             heapq.heappush(retlist, (ordernum, playbook_text))
         
@@ -93,6 +95,9 @@ class RequiredParameterDirectivesNotProvided(Exception):
     pass
    
 class DirectivesDictContainedNoDirectives(Exception):
+    pass
+      
+class DirectiveFileDoesNotExist(Exception):
     pass
       
 def _playbook_from_dict(**kwargs):
@@ -120,9 +125,11 @@ def _playbook_from_dict(**kwargs):
                 directive_name = directives_dict['directive']
                 directive_ndx = directive_index(directive_name)
                 #directive_filepath = directive_filepath(directive_name)
+                directive_path = directive_filepath(directive_name)
             
                 try:
-                    with open(directive_filepath(directive_name), "r") as fh:
+                                    
+                    with open(directive_path, "r") as fh:
                         dict_yaml_text = None
                         if params:
                             #print "params!: {}".format(params)
@@ -144,6 +151,8 @@ def _playbook_from_dict(**kwargs):
                         else:
                             return (directive_ndx, "{}\n".format(dict_yaml_text))
                         #return (directive_index, template_text)
+                except TypeError:
+                    raise DirectiveFileDoesNotExist(directive_name)
                 except jinja2.exceptions.TemplateSyntaxError:
                     #print "ERR: Template syntax error in {}".format(directive_filepath)
                     raise
@@ -177,6 +186,7 @@ def machine_config(opts):
     try:
         if machine_conf is None:
             machine_name = opts["machine"]
+            directive_file_stack_push(machine_name)
             machine_config_filepath = os.path.join(machines_dirpath(), "{}.meta".format(machine_name))
             #print "INFO: loading machine config for: {}, at {}".format(machine_name, machine_config_filepath)
             with open (machine_config_filepath, "r") as machine_def_fh: 
@@ -221,7 +231,17 @@ def write_ansible_hosts(opts):
         else:
             raise
         
-        
+
+_directive_name_stack = []
+def directive_file_stack_push(directive_name):
+    _directive_name_stack.append(directive_name)
+    
+def directive_file_stack_pop():
+    _directive_name_stack.pop()
+    
+def directive_file_stack_as_str():
+    return ">".join(_directive_name_stack)
+    
 def write_ansible_playbook(opts):
     try:
         mconf = machine_config(opts)
@@ -238,12 +258,15 @@ def write_ansible_playbook(opts):
             
         playbook_output_filepath = ansible_playbook_filepath(opts)
         #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
-        with open(ansible_playbook_filepath(opts), "w") as fh:
-            order, txt = _playbook_from_list( directives=directives, parameters=params )
-            if bool(txt):
-                fh.write(txt)
-            else:
-                fh.write("# WARN: No directives found!\n")
+        try:
+            with open(ansible_playbook_filepath(opts), "w") as fh:
+                order, txt = _playbook_from_list( directives=directives, parameters=params )
+                if bool(txt):
+                    fh.write(txt)
+                else:
+                    fh.write("# WARN: No directives found!\n")
+        except DirectiveFileDoesNotExist as e:
+            print "ERR: directive referenced for which no file was found: {}, stack: {}".format(str(e), directive_file_stack_as_str())
             
     except TypeError:
         #print "machine_config: {}".format(str(mconf))
