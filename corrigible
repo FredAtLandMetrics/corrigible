@@ -222,10 +222,6 @@ def write_ansible_hosts(opts):
             raise
         
         
-    # this should read the host groups from the machine config and write something appropriate
-    
-    
-
 def write_ansible_playbook(opts):
     try:
         mconf = machine_config(opts)
@@ -286,13 +282,8 @@ if __name__ == '__main__':
     for opt, val in args.iteritems():
         options[opt] = val
     
-    #options = vars(parser.parse_args())
     write_ansible_hosts(options)
     write_ansible_playbook(options)
-    
-    #print "options: {}".format(str(options))
-    
-    #print "opt[generate-files-only]: {}".format(options['generate_files_only'])
     
     if not options["generate_files_only"]:
         provision_machine(options)
