@@ -15,8 +15,7 @@ directives:
     - directive: add_misc_users_grp_b
     - directive: add_misc_users_grp_a
     - directive: add_deploy_user
-
-files:
-    - source: toplevel.txt
-      destination: /tmp/test_toplevel.txt
-      mode: 0444
+    - files:
+        - source: toplevel.txt
+          destination: /tmp/test_toplevel.txt
+          mode: 0444

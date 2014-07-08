@@ -4,8 +4,7 @@ parameters:
 directives:
     - directive: apt_add_packages
     - directive: add_misc_users_grp_c
-        
-files:
-    - source: some/path/testfile.txt
-      destination: /tmp/testfile.txt
-      mode: 0755
+    - files:
+        - source: some/path/testfile.txt
+          destination: /tmp/testfile.txt
+          mode: 0755
