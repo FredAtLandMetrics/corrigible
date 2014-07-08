@@ -61,6 +61,7 @@ class TestMachineConfig(CorrigibleTest):
         #    apt_add_packages (81)
         #    add_misc_users_grp_a (75)
         
+        # ABOVE CHANGED WITH ADDITION OF FILES DIRECTIVE!!!
         
         #    add_deploy_user (04)
         tasksrec['copy_toplevel_text_file'] = s[0]['tasks'][0]
