@@ -148,7 +148,10 @@ def _playbook_from_dict__files(files_list, params):
         if 'group' in f:
             txt += ' group={}'.format(str(f['group']))
         txt += '\n'
-    return (None, txt)
+    try:
+        return (params['order'], txt)
+    except KeyError:
+        return (0, txt)
             
       
 def _playbook_from_dict(**kwargs):
