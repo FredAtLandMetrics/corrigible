@@ -67,10 +67,19 @@ def _playbook_from_list(**kwargs):
         
         #print "directives({}), parameters({})".format(kwargs['directives'], params)
         for directives_dict in kwargs['directives']:
-            directive_file_stack_push(directives_dict['directive'])
+            
+            dopop = False
+            if 'directive' in directives_dict:
+                directive_file_stack_push(directives_dict['directive'])
+                dopop = True
+            elif 'files' in directives_dict:
+                directive_file_stack_push('files')
+                dopop = True
+            
             ordernum, playbook_text = _playbook_from_dict(directives=directives_dict,
                                                           parameters=params)
-            directive_file_stack_pop()
+            if dopop:
+                directive_file_stack_pop()
             #print "o: {}, t: {}".format(ordernum, playbook_text)
             heapq.heappush(retlist, (ordernum, playbook_text))
         
@@ -98,6 +107,9 @@ class DirectivesDictContainedNoDirectives(Exception):
     pass
       
 class DirectiveFileDoesNotExist(Exception):
+    pass
+      
+class UnknownDirectiveEncountered(Exception):
     pass
       
 def _playbook_from_dict__directive(directive_name, params):      
@@ -137,6 +149,9 @@ def _playbook_from_dict__directive(directive_name, params):
         raise        
     
 def _playbook_from_dict__files(files_list, params):
+    
+    print "params: {}".format(params)
+    
     assert(bool(files_list))
     txt = '- hosts: all\n  user: {}\n  sudo: {}\n  tasks:\n'.format(params['sudouser'], params['sudo'])
     for f in files_list:
@@ -175,14 +190,15 @@ def _playbook_from_dict(**kwargs):
                                        parameters=params)
         except KeyError:
             
-            mode = None
             try:
                 directive_name = directives_dict['directive']
                 return _playbook_from_dict__directive(directive_name, params)
             except KeyError:
                 try:
                     files_list = directives_dict['files']
-                    return _playbook_from_dict__files(files_list)
+                    return _playbook_from_dict__files(files_list, params)
+                except KeyError:
+                    raise UnknownDirectiveEncountered()
            
     except KeyError:
         raise RequiredParameterDirectivesNotProvided()
