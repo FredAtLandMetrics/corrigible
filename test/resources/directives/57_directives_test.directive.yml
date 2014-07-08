@@ -8,3 +8,4 @@ directives:
         - source: some/path/testfile.txt
           destination: /tmp/testfile.txt
           mode: 0755
+          order: 39
