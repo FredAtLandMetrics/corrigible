@@ -58,6 +58,37 @@ The Directives Directory and Directives Files
 
 The *directives directory* is where directives files are located. There are two types of directives files, **ansible excerpt** files and **directive container** files. 
 
-**Ansible Excerpt** files are literally that, excerpts of ansible playbooks.  They can reference variables defined in *parameters* sections (see **Section Types** below).
+**Ansible excerpt files** are literally that, excerpts of ansible playbooks.  They can reference variables defined in *parameters* sections (see **Section Types** below).
 
-**Directive Container** files look like machine configuration files, except that they may not contain hosts sections (or, rather, if they do, then the hosts section will be ignored).  Additionally, there is a naming convention for these files that has implications as to the order in which the directives are processed.
+**Directive container files** look like machine configuration files, except that they may not contain hosts sections (or, rather, if they do, then the hosts section will be ignored).  Additionally, there is a naming convention for these files that has implications as to the order in which the directives are processed.
+
+Machine config files and directive container files explained
+============================================================
+
+Machine config files
+--------------------
+```YAML
+hosts:
+    - hostname: 'testhost'
+      hostgroup: 'testgroup'
+      ip_address: 1.2.3.4
+
+parameters:
+    sudouser: ubuntu
+    deployuser: deploy
+    sudo: yes
+    
+directives:
+    - directive: apt_upgrade
+    - directive: install_cron
+    - directive: add_deploy_user
+    - files:
+        - source: toplevel.txt
+          destination: /tmp/test_toplevel.txt
+          mode: 0444
+
+'''
+
+Directive container files
+-------------------------
+
