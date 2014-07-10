@@ -183,6 +183,11 @@ fred@chimera:~/Projects/corrigible$ ls test/resources/directives
 81_apt_add_packages.ansible.yml
 ```
 
+By looking at the filename, it's easy to tell whether a given file is an ansible playbook excerpt or a directive container file.
+
+Note, too, that each file is prefixed by an integer. This guides **corrigible** when it determines the order in which certain directives are to be executed.
+
+
 The parameters section
 ----------------------
 
