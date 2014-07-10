@@ -7,7 +7,7 @@ Introduction
 * simplified variable substitution
 * runlevels for full vs. partial playbook execution
     
-From the ansible workflow, **corrigible** removes:
+From the ansible workflow, corrigible removes:
 * duplicated playbook directives
 * hosts files
 
@@ -16,7 +16,7 @@ It begins with a workspace, which defaults to */usr/local/etc/corrigible*.  In t
 * **machines** - toplevel config files for hosts (or groups of hosts)
 * **directives** - playbook excerpts and *directive* files which allow for intelligent grouping of playbook excerpts
 
-The *machines* and *directives* directories are where all the magic happens for corrigible.  The *machines* directory contains holds *meta* files which tell **corrigible** how to start the provisioning process for a given host (or group of hosts).
+The *machines* and *directives* directories are where all the magic happens for corrigible.  The *machines* directory contains holds *meta* files which tell corrigible how to start the provisioning process for a given host (or group of hosts).
 
 Once the machine file and various directive files are in place, provisioning is as simple as:
 ```shell
@@ -29,14 +29,14 @@ I really like ansible, but it's awkward.  I feel like it's made to be simple and
 
 I really don't like doing things more than once.  But I maintain a stable of playbooks and I'm copying ssh keys around from one to the other and part of my troubleshooting routine for them is to look for places where I fixed an issue in one playbook but didn't insert it into the three others that could also have used the fix.
 
-After a great discussion with a coworker about our particular set of requirements, I scratched out a design for **corrigible** to meet them without sacrificing ansible's simplicity (which we both agreed was priority #1).
+After a great discussion with a coworker about our particular set of requirements, I scratched out a design for corrigible to meet them without sacrificing ansible's simplicity (which we both agreed was priority #1).
 
 For us, it helps ansible scale.
 
 Before You Begin
 ================
 
-As mentioned above, **corrigible** expects three directories to exist: one for files, one for machine config files and one for directive files.
+As mentioned above, corrigible expects three directories to exist: one for files, one for machine config files and one for directive files.
 
 These directories default to */usr/local/etc/corrigible[files|machines|directives]* but can be customized via the following environment variables:
 * **CORRIGIBLE_PATH** - define this to configure a directory which will contain *files*, *machines*, and *directives* subdirectories
@@ -153,9 +153,9 @@ hosts:
       ##     - ALL
 ```    
 
-It's pretty straightforward, really. It shows two hosts with their names and ip addresses.  This lets **corrigible** know which network-accessible machines are to be targetted by the directives.
+It's pretty straightforward, really. It shows two hosts with their names and ip addresses.  This lets corrigible know which network-accessible machines are to be targetted by the directives.
 
-The hosts section also illustrates one of the more interesting features of **corrigible**, *run_selectors*. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the **corrigible** command-line.
+The hosts section also illustrates one of the more interesting features of corrigible, *run_selectors*. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the corrigible command-line.
 
 ###The directives section
 
@@ -194,7 +194,7 @@ fred@chimera:~/Projects/corrigible$ ls test/resources/directives
 
 By looking at the filename, it's easy to tell whether a given file is an ansible playbook excerpt or a directive container file.
 
-Note, too, that each file is prefixed by an integer. This guides **corrigible** when it determines the order in which certain directives are to be executed.
+Note, too, that each file is prefixed by an integer. This guides corrigible when it determines the order in which certain directives are to be executed.
 
 A look at the directive container file will show how similar it is to the machine config file:
 ```YAML
