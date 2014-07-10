@@ -120,10 +120,9 @@ directives:
 
 ```
 
-The hosts section
------------------
+###The hosts section
 
-The hosts section is the main difference between the two file types.  Here's the hosts section from the example above:
+The hosts section is the main difference between the two file types.  Machine config files have them and directive container files do not.  Here's the hosts section from the example above:
     
 ```YAML
 hosts:
@@ -148,8 +147,8 @@ It's pretty straightforward, really. It shows two hosts with their names and ip 
 
 The hosts section also illustrates one of the more interesting features of **corrigible**, *run_selectors*. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the **corrigible** command-line.
 
-The directives section
-----------------------
+###The directives section
+
 The directives section tells corrigible what it will be doing to the hosts listed in the hosts section.  It can contain any number of references to directive container files, ansible workbook extracts, and file transfer listings. It's not immediately obvious, but the directives section in the example above contains all three types of references.
 
 ```YAML
@@ -188,8 +187,7 @@ By looking at the filename, it's easy to tell whether a given file is an ansible
 Note, too, that each file is prefixed by an integer. This guides **corrigible** when it determines the order in which certain directives are to be executed.
 
 
-The parameters section
-----------------------
+###The parameters section
 
 
 
