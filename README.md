@@ -169,7 +169,7 @@ directives:
 ```
 The lines that begin with a *- directive:* can refer to *either* a directive container file or an ansible excerpt file. Like the host records above, they can contain run selectors and can be similarly included/excluded.
 
-As it happens, all of the directives in this section are refer to ansible playbook excerts except for the one with the 'directives-test' name.  Note that there's no way to tell which is which without looking at the files in the directives directory.
+As it happens, all of the directives in this section are refer to ansible playbook excerpts except for the one with the 'directives-test' name.  Note that there's no way to tell which is which without looking at the files in the directives directory.
 ```
 fred@chimera:~/Projects/corrigible$ ls test/resources/directives
 04_add_deploy_user.ansible.yml
@@ -185,6 +185,24 @@ fred@chimera:~/Projects/corrigible$ ls test/resources/directives
 By looking at the filename, it's easy to tell whether a given file is an ansible playbook excerpt or a directive container file.
 
 Note, too, that each file is prefixed by an integer. This guides **corrigible** when it determines the order in which certain directives are to be executed.
+
+First, a look at the directives container file will show how similar it is to the machine config file:
+```YAML
+# this is 57_directives_test.directive.yml
+
+parameters:
+    apt_packages_to_install: 'php5,imagemagick'
+        
+directives:
+    - directive: apt_add_packages
+    - directive: add_misc_users_grp_c
+    - files:
+        - source: some/path/testfile.txt
+          destination: /tmp/testfile.txt
+          mode: 0755
+          order: 39
+```
+The parameters section is discussed in the next section, but the directives section is the same as that of the machine config file and it behaves the same way.  It is important to note that the directives in a directive container file are executed in sequence.  *This means that it is possible for a directive with a 100 prefix can be executed before a directive with a 50 prefix if it is referenced in a directory container file with a prefix of 20.*
 
 
 ###The parameters section
