@@ -244,7 +244,7 @@ The *81_apt_add_packages.ansible.yml* file, when it is included via the *57_dire
 * sudo
 * apt_packages_to_install
 
-*Note that parameters in higher-level directive container files and in machine config files will supercede those specified in lower-level directive container files.*
+Note that *parameters in higher-level directive container files and in machine config files will supercede those specified in lower-level directive container files.*  Using this mechanism, it's possible for multiple machines to use the same directive containers and yet retain the ability to customize directive behavior at the machine config file level.
 
 
 Project Status
