@@ -87,7 +87,7 @@ directives:
           destination: /tmp/test_toplevel.txt
           mode: 0444
 
-'''
+```
 
 Directive container files
 -------------------------
