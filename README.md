@@ -65,6 +65,15 @@ The *directives directory* is where directives files are located. There are two 
 Machine config files and directive container files explained
 ============================================================
 
+Machines config files and directive container files are very similar in format, but they vary a bit in scope.  Machine config files are the starting point for corrigible, such that when corrigible is run with this command:
+```
+corrigible somemachine
+```
+the very first thing corrigible will do is go look in the machines dir for a file named *somemachine.meta*.
+
+Directive container files, on the other hand, are included by machine config files (and other directory container files).
+
+
 Machine config files
 --------------------
 
@@ -102,6 +111,7 @@ directives:
           exclude:
             - update_dnsservers      
     - directive: install_cron
+    - directive: directives_test
     - directive: add_deploy_user
     - files:
         - source: toplevel.txt
@@ -113,7 +123,7 @@ directives:
 The hosts section
 -----------------
 
-Here's the hosts section again:
+The hosts section is the main difference between the two file types.  Here's the hosts section from the example above:
     
 ```YAML
 hosts:
@@ -134,10 +144,53 @@ hosts:
       ##     - ALL
 ```    
 
-The hosts section is pretty straightforward, it shows two hosts with their names and ip addresses.  This lets **corrigible** know which network-accessible machines are to be targetted by the directives.
+It's pretty straightforward, really. It shows two hosts with their names and ip addresses.  This lets **corrigible** know which network-accessible machines are to be targetted by the directives.
 
 The hosts section also illustrates one of the more interesting features of **corrigible**, *run_selectors*. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the **corrigible** command-line.
+
+The directives section
+----------------------
+The directives section tells corrigible what it will be doing to the hosts listed in the hosts section.  It can contain any number of references to directive container files, ansible workbook extracts, and file transfer listings. It's not immediately obvious, but the directives section in the example above contains all three types of references.
+
+```YAML
+directives:
+    - directive: apt_upgrade
+      run_selectors:
+          include:
+            - ALL
+          exclude:
+            - update_dnsservers      
+    - directive: install_cron
+    - directive: directives_test
+    - directive: add_deploy_user
+    - files:
+        - source: toplevel.txt
+          destination: /tmp/test_toplevel.txt
+          mode: 0444
+```
+The lines that begin with a *- directive:* can refer to *either* a directive container file or an ansible excerpt file. Like the host records above, they can contain run selectors and can be similarly included/excluded.
+
+As it happens, all of the directives in this section are refer to ansible playbook excerts except for the one with the 'directives-test' name.  Note that there's no way to tell which is which without looking at the files in the directives directory.
+```
+fred@chimera:~/Projects/corrigible$ ls test/resources/directives
+04_add_deploy_user.ansible.yml
+11_install_cron.ansible.yml
+19_apt_upgrade.ansible.yml
+35_add_misc_users_grp_b.ansible.yml
+38_add_misc_users_grp_c.ansible.yml
+57_directives_test.directive.yml
+75_add_misc_users_grp_a.ansible.yml
+81_apt_add_packages.ansible.yml
+```
+
+The parameters section
+----------------------
+
+
 
 Directive container files
 -------------------------
 
+Project Status
+==============
+The hard parts work and there's tests around key points. Run selectors are not yet implemented and testing has been limited to examination of generated ansible hosts and playbook files. Usage against an actual machine has not yet been done.
