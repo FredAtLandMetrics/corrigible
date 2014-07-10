@@ -134,7 +134,9 @@ hosts:
       ##     - ALL
 ```    
 
-So, the hosts section is pretty straightforward, but it also illustrates one of the more interesting features of **corrigible**, run_selectors. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the **corrigible** command-line.
+The hosts section is pretty straightforward, it shows two hosts with their names and ip addresses.  This lets **corrigible** know which network-accessible machines are to be targetted by the directives.
+
+The hosts section also illustrates one of the more interesting features of **corrigible**, *run_selectors*. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the **corrigible** command-line.
 
 Directive container files
 -------------------------
