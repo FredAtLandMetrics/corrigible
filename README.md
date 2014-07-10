@@ -67,11 +67,27 @@ Machine config files and directive container files explained
 
 Machine config files
 --------------------
+
+This is a machine configuration file that is based on one used by the test suite.
+
 ```YAML
 hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
     - hostname: 'testhost'
-      hostgroup: 'testgroup'
       ip_address: 1.2.3.4
+      run_selectors:               # optional...host is _always_ targetted if unspecified
+          include:
+            # - ALL                # keyword that, if present, matches all run selectors
+            - update_dnsservers
+          exclude:
+            - restart_webservers   # useless as specified, but handy if include matches ALL
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+      ## run_selectors:     # default to all inclusive run selectors when not specified
+      ##   include:
+      ##     - ALL
+      
 
 parameters:
     sudouser: ubuntu
@@ -80,6 +96,11 @@ parameters:
     
 directives:
     - directive: apt_upgrade
+      run_selectors:
+          include:
+            - ALL
+          exclude:
+            - update_dnsservers      
     - directive: install_cron
     - directive: add_deploy_user
     - files:
@@ -88,6 +109,32 @@ directives:
           mode: 0444
 
 ```
+
+The hosts section
+-----------------
+
+Here's the hosts section again:
+    
+```YAML
+hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+    - hostname: 'testhost'
+      ip_address: 1.2.3.4
+      run_selectors:               # optional...host is _always_ targetted if unspecified
+          include:
+            # - ALL                # keyword that, if present, matches all run selectors
+            - update_dnsservers
+          exclude:
+            - restart_webservers   # useless as specified, but handy if include matches ALL
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+      ## run_selectors:     # default to all inclusive run selectors when not specified
+      ##   include:
+      ##     - ALL
+```    
+
+So, the hosts section is pretty straightforward, but it also illustrates one of the more interesting features of **corrigible**, run_selectors. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the **corrigible** command-line.
 
 Directive container files
 -------------------------
