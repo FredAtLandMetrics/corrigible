@@ -23,6 +23,16 @@ Once the machine file and various directive files are in place, provisioning is 
 corrigible somehost
 ```
 
+Why?
+====
+I really like ansible, but it's awkward.  I feel like it's made to be simple and, as soon as I try to do something a bit more complicated (but not THAT much), I end up copying bits of ansible playbooks around (or not, which is not great).
+
+I really don't like doing things more than once.  But I maintain a stable of playbooks and I'm copying ssh keys around from one to the other and part of my troubleshooting routine for them is to look for places where I fixed an issue in one playbook but didn't insert it into the three others that could also have used the fix.
+
+After a great discussion with a coworker about our particular set of requirements, I scratched out a design for **corrigible** to meet them without sacrificing ansible's simplicity (which we both agreed was priority #1).
+
+For us, it helps ansible scale.
+
 Before You Begin
 ================
 
