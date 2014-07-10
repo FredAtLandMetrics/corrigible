@@ -76,12 +76,12 @@ hosts:
       ip_address: 2.3.4.5
     - hostname: 'testhost'
       ip_address: 1.2.3.4
-      run_selectors:               # optional...host is _always_ targetted if unspecified
+      run_selectors:               # optional...ALWAYS targetted if unspecified
           include:
-            # - ALL                # keyword that, if present, matches all run selectors
+            # - ALL                # if present, matches all run selectors
             - update_dnsservers
           exclude:
-            - restart_webservers   # useless as specified, but handy if include matches ALL
+            - restart_webservers   # useless as spec'd, handy if including ALL
     - hostname: 'otherhost'
       ip_address: 2.3.4.5
       ## run_selectors:     # default to all inclusive run selectors when not specified
