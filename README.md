@@ -186,7 +186,7 @@ By looking at the filename, it's easy to tell whether a given file is an ansible
 
 Note, too, that each file is prefixed by an integer. This guides **corrigible** when it determines the order in which certain directives are to be executed.
 
-First, a look at the directives container file will show how similar it is to the machine config file:
+A look at the directive container file will show how similar it is to the machine config file:
 ```YAML
 # this is 57_directives_test.directive.yml
 
@@ -204,13 +204,37 @@ directives:
 ```
 The parameters section is discussed in the next section, but the directives section is the same as that of the machine config file and it behaves the same way.  It is important to note that the directives in a directive container file are executed in sequence.  *This means that it is possible for a directive with a 100 prefix can be executed before a directive with a 50 prefix if it is referenced in a directory container file with a prefix of 20.*
 
-
+To segue into the parameters section, we'll look at the contents of a ansible playbook excerpt:
+```YAML
+# This is 81_apt_add_packages.ansible.yml
+- user: {{ sudouser }}
+  sudo: yes
+  tasks:
+    - name: install some apt packages
+      apt: name={{ apt_packages_to_install }} state=present
+```
+No surprises here. Ansible playbooks already have variable substitution. Corrigible variable substitution works the same way only, instead of being specified on the command line, corrigible reads assigns values to the variables from the parameters section.
+    
 ###The parameters section
+The parameters section is how corrigible deals with variable substitution. The example machine config included a parameters section that looked like:
+```YAML
+parameters:
+    sudouser: ubuntu
+    deployuser: deploy
+    sudo: yes
+```
+and the directive container file had parameters like:
+```YAML
+parameters:
+    apt_packages_to_install: 'php5,imagemagick'
+```
+The *81_apt_add_packages.ansible.yml* file, when it is included via the *57_directives_test.directive.yml*, will have the following variables available to it:
+* sudouser
+* deployuser
+* sudo
+* apt_packages_to_install
+*Note that parameters in higher-level directive container files and in machine config files will supercede those specified in lower-level directive container files.*
 
-
-
-Directive container files
--------------------------
 
 Project Status
 ==============
