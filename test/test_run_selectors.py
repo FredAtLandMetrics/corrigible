@@ -25,17 +25,39 @@ class TestRunSelectors(CorrigibleTest):
         self.output_hostsfile_filepath = HOSTS_FILEPATH__MACHINECONF_TEST
         self.corrigible_exec_filepath = corrigible_exec_filepath
         
+    def _assert_hostsmap(self, incmap):
+        hosts = self.hostgroup_hostnames(self.output_hostsfile_filepath, 'all')
+        for res_pair in incmap:
+            hostname, present = res_pair
+            print "testing host: {}, present: {}".format(hostname, present)
+            if present is None or present is False:
+                self.assertFalse(hostname in hosts)
+            elif present is True:
+                self.assertTrue(hostname in hosts)
+        
     def test_hosts(self, **kwargs):
         self.rerun_corrigible(machine_config="test_rs_hosts",
                               generate_files_only=True)
+        incmap =  [ [ 'a', True ],
+                    [ 'b', True ],
+                    [ 'c', True ],
+                    [ 'd', False ],
+                    [ 'e', True ] ]
+        self._assert_hostsmap(incmap)
+        
         # determine that the hosts file looks like it should with no run selectors
         
-        self.rerun_corrigible(machine_config="test_rs_hosts",
-                              generate_files_only=True,
-                              run_selectors="testrs1")
-        self.rerun_corrigible(machine_config="test_rs_hosts",
-                              generate_files_only=True,
-                              run_selectors="testrs5")
-        self.rerun_corrigible(machine_config="test_rs_hosts",
-                              generate_files_only=True,
-                              run_selectors="testrs1,testrs5")
+        #self.rerun_corrigible(machine_config="test_rs_hosts",
+                              #generate_files_only=True,
+                              #run_selectors="testrs1")
+        #self.rerun_corrigible(machine_config="test_rs_hosts",
+                              #generate_files_only=True,
+                              #run_selectors="testrs5")
+        #self.rerun_corrigible(machine_config="test_rs_hosts",
+                              #generate_files_only=True,
+                              #run_selectors="testrs1,testrs5")
+                              
+                            
+if __name__ == '__main__':
+    unittest.main()   
+      
