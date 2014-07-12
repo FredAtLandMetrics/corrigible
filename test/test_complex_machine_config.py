@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import re
 
 from corrigible.lib.provision_files import directive_index, directive_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
@@ -30,6 +31,8 @@ class TestMachineConfig(CorrigibleTest):
         """re-run corrigible for the complex directive test config"""
         self.rerun_corrigible(machine_config="test_complex_directives",
                               generate_files_only=True)
+        
+        
         
     def test_complex_directive_ordering(self):
         """after re-running corrigible on the complex directives test machine config, test that the directives are ordered as per the index indicated is each's filename and as per the directive file containment"""
@@ -66,6 +69,7 @@ class TestMachineConfig(CorrigibleTest):
         #    add_deploy_user (04)
         tasksrec['copy_toplevel_text_file'] = s[0]['tasks'][0]
         self.assertTrue('copy' in tasksrec['copy_toplevel_text_file'])
+        self.assertTrue(re.search(r'toplevel\.txt',tasksrec['copy_toplevel_text_file']['copy']))
         
         tasksrec['add_deploy_user'] = s[1]['tasks'][0]
         self.assertTrue('user' in tasksrec['add_deploy_user'])
@@ -82,28 +86,21 @@ class TestMachineConfig(CorrigibleTest):
         self.assertTrue(tasksrec['apt_upgrade']['name'].strip() == "ensure latest os version")
         
         #    add_misc_users_grp_b (35)
-        tasksrec['add_misc_users_grp_b'] = s[4]['tasks'][0]
-        self.assertTrue('user' in tasksrec['add_misc_users_grp_b'])
-        self.assertTrue(tasksrec['add_misc_users_grp_b']['name'].strip() == "add tim")
-
-        #    add_misc_users_grp_c (38)
-        tasksrec['copy_deeper_file'] = s[5]['tasks'][0]
-        self.assertTrue('copy' in tasksrec['copy_deeper_file'])
-
-        tasksrec['add_misc_users_grp_c'] = s[6]['tasks'][0]
+        tasksrec['add_misc_users_grp_c'] = s[4]['tasks'][0]
         self.assertTrue('user' in tasksrec['add_misc_users_grp_c'])
+        self.assertTrue(re.search(r'toplevel\.txt',tasksrec['copy_toplevel_text_file']['copy']))
         self.assertTrue(tasksrec['add_misc_users_grp_c']['name'].strip() == "add sara")
 
+        # file copy from 57_directives_test.directive.yml
+        tasksrec['copy_some_file'] = s[5]['tasks'][0]
+        self.assertTrue('copy' in tasksrec['copy_some_file'])
+        self.assertTrue(re.search(r'testfile\.txt',tasksrec['copy_some_file']['copy']))
+        
         #    apt_add_packages (81)
-        tasksrec['apt_add_packages'] = s[7]['tasks'][0]
+        tasksrec['apt_add_packages'] = s[6]['tasks'][0]
         self.assertTrue('apt' in tasksrec['apt_add_packages'])
         self.assertTrue(tasksrec['apt_add_packages']['name'].strip() == "install some apt packages")
 
-        #    add_misc_users_grp_a (75)
-        tasksrec['add_misc_users_grp_a'] = s[8]['tasks'][0]
-        self.assertTrue('user' in tasksrec['add_misc_users_grp_a'])
-        self.assertTrue(tasksrec['add_misc_users_grp_a']['name'].strip() == "add frank")
-        
 
 if __name__ == '__main__':
     unittest.main()   

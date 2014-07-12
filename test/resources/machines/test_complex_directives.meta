@@ -1,7 +1,20 @@
 hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
     - hostname: 'testhost'
-      hostgroup: 'testgroup'
       ip_address: 1.2.3.4
+      run_selectors:               # optional...ALWAYS targetted if unspecified
+          include:
+            # - ALL                # if present, matches all run selectors
+            - update_dnsservers
+          exclude:
+            - restart_webservers   # useless as spec'd, handy if including ALL
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+      ## run_selectors:     # default to all inclusive run selectors when not specified
+      ##   include:
+      ##     - ALL
+      
 
 parameters:
     sudouser: ubuntu
@@ -9,11 +22,14 @@ parameters:
     sudo: yes
     
 directives:
-    - directive: directives_test
     - directive: apt_upgrade
+      run_selectors:
+          include:
+            - ALL
+          exclude:
+            - update_dnsservers      
     - directive: install_cron
-    - directive: add_misc_users_grp_b
-    - directive: add_misc_users_grp_a
+    - directive: directives_test
     - directive: add_deploy_user
     - files:
         - source: toplevel.txt

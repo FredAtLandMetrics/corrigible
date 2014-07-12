@@ -66,6 +66,7 @@ def _playbook_from_list(**kwargs):
         retlist= []
         
         #print "directives({}), parameters({})".format(kwargs['directives'], params)
+        playbook_text_tuple_list = []
         for directives_dict in kwargs['directives']:
             
             dopop = False
@@ -76,18 +77,15 @@ def _playbook_from_list(**kwargs):
                 directive_file_stack_push('files')
                 dopop = True
             
-            ordernum, playbook_text = _playbook_from_dict(directives=directives_dict,
-                                                          parameters=params)
+            playbook_text_tuple_list.append(_playbook_from_dict(directives=directives_dict,
+                                                                parameters=params))
             if dopop:
                 directive_file_stack_pop()
-            #print "o: {}, t: {}".format(ordernum, playbook_text)
-            heapq.heappush(retlist, (ordernum, playbook_text))
+                
+        ret = _text_from_tuple_list(*playbook_text_tuple_list)
         
-        ret = ""
-        for item in sorted(retlist):
-            order, txt = item
-            ret += "{}\n".format(txt)
-        #print "_playbook_from_list returning: ({}, {})".format(MAX_DIRECTIVE_ORDER, ret)
+        
+        
         return (MAX_DIRECTIVE_ORDER, ret)
     except KeyError:
         raise RequiredParameterDirectivesNotProvided()
@@ -111,6 +109,23 @@ class DirectiveFileDoesNotExist(Exception):
       
 class UnknownDirectiveEncountered(Exception):
     pass
+      
+def _text_from_tuple_list(*args):
+    retlist = []
+    for tuple_list in args:
+        #print "tuple_list: {}".format(tuple_list)
+        for playbook_text_tuple in tuple_list:
+            ordernum, playbook_text = playbook_text_tuple
+            heapq.heappush(retlist, (ordernum, playbook_text))
+    ret = ""
+    for item in sorted(retlist):
+        order, txt = item
+        ret += "{}\n".format(txt)
+        
+    if not bool(ret):
+        return None
+        
+    return ret
       
 def _playbook_from_dict__directive(directive_name, params):      
     directive_ndx = directive_index(directive_name)
@@ -138,9 +153,9 @@ def _playbook_from_dict__directive(directive_name, params):
                 'files' in yaml_struct.keys():
                 #print "calling with yaml struct"
                 _, directive_text =  _playbook_from_dict(directives=yaml_struct, parameters=params)
-                return (directive_ndx, "{}\n".format(directive_text))
+                return [(directive_ndx, "{}\n".format(directive_text))]
             else:
-                return (directive_ndx, "{}\n".format(dict_yaml_text))
+                return [(directive_ndx, "{}\n".format(dict_yaml_text))]
             #return (directive_index, template_text)
     except TypeError:
         raise DirectiveFileDoesNotExist(directive_name)
@@ -150,12 +165,16 @@ def _playbook_from_dict__directive(directive_name, params):
     
 def _playbook_from_dict__files(files_list, params):
     
-    print "params: {}".format(params)
+    #print "params: {}".format(params)
     
     assert(bool(files_list))
-    txt = '- hosts: all\n  user: {}\n  sudo: {}\n  tasks:\n'.format(params['sudouser'], params['sudo'])
+    
+    tasks_header = '- hosts: all\n  user: {}\n  sudo: {}\n  tasks:\n'.format(params['sudouser'], params['sudo'])
+    
+    files = {}
     for f in files_list:
-        txt += '  - copy: src={} dest={}'.format(f['source'], f['destination'])
+        
+        txt = '    - copy: src={} dest={}'.format(f['source'], f['destination'])
         if 'mode' in f:
             txt += ' mode={}'.format(str(f['mode']))
         if 'owner' in f:
@@ -163,11 +182,25 @@ def _playbook_from_dict__files(files_list, params):
         if 'group' in f:
             txt += ' group={}'.format(str(f['group']))
         txt += '\n'
-    try:
-        return (params['order'], txt)
-    except KeyError:
-        return (0, txt)
-            
+        
+        order = '0'
+        try:
+            order = f['order']
+        except KeyError:
+            pass
+        
+        order_as_str = str(order)
+        
+        try:
+            files[order_as_str] += txt
+        except KeyError:
+            files[order_as_str] = "{}{}".format(tasks_header, txt)
+        
+    ret = []
+    for order_as_str, txt in files.iteritems():
+        ret.append((int(order_as_str), txt))
+        
+    return ret            
       
 def _playbook_from_dict(**kwargs):
     
@@ -283,7 +316,16 @@ def directive_file_stack_pop():
     
 def directive_file_stack_as_str():
     return ">".join(_directive_name_stack)
+
+def _filter_final_playbook_output(raw):
+    #print "raw:\n{}".format(raw)
+    as_struct = yaml.load(raw)
     
+    
+    
+    as_string = yaml.dump(as_struct)    
+    return as_string
+  
 def write_ansible_playbook(opts):
     try:
         mconf = machine_config(opts)
@@ -301,14 +343,20 @@ def write_ansible_playbook(opts):
         playbook_output_filepath = ansible_playbook_filepath(opts)
         #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
         try:
+            assert(bool(directives))
             with open(ansible_playbook_filepath(opts), "w") as fh:
-                order, txt = _playbook_from_list( directives=directives, parameters=params )
-                if bool(txt):
-                    fh.write(txt)
+                order, playbook_output = _playbook_from_list( directives=directives, parameters=params )
+                
+                playbook_output = _filter_final_playbook_output(playbook_output)
+                
+                if bool(playbook_output):
+                    fh.write(playbook_output)
                 else:
                     fh.write("# WARN: No directives found!\n")
         except DirectiveFileDoesNotExist as e:
             print "ERR: directive referenced for which no file was found: {}, stack: {}".format(str(e), directive_file_stack_as_str())
+        except AssertionError:
+            print "WARN: no directives defined!"
             
     except TypeError:
         #print "machine_config: {}".format(str(mconf))

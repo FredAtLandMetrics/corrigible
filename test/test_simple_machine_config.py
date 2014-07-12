@@ -38,7 +38,7 @@ class TestMachineConfig(CorrigibleTest):
         
     def test_machine_config_output_files_exist(self):
         """test that the output files exist after rerunning corrigible using the hostsfile generation test machine config"""
-        self.regen_test_hostsfile_gen_files()
+        self.regen_test_simple_directives()
         self.assertTrue(os.path.isfile(self.output_playbook_filepath))
         self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         
