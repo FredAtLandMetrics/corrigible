@@ -317,11 +317,70 @@ def directive_file_stack_pop():
 def directive_file_stack_as_str():
     return ">".join(_directive_name_stack)
 
-def _filter_final_playbook_output(raw):
+_run_selectors = None
+def set_run_selectors_list(rslist):
+    global _run_selectors
+    _run_selectors = rslist
+    
+def get_run_selectors_list():
+    global _run_selectors
+    return _run_selectors
+
+def _run_selector_include_affirmative(include_selectors):
+    try:
+        run_selectors = get_run_selectors_list()
+        
+        for sel in include_selectors:
+            if sel == 'ALL':
+                return True
+            if sel in run_selectors:
+                return True
+        return False
+    except TypeError:
+        return False
+
+def _run_selector_exclude_affirmative(exclude_selectors):
+    try:
+        run_selectors = get_run_selectors_list()
+        
+        for sel in exclude_selectors:
+            if sel == 'ALL':
+                return True
+            if sel in run_selectors:
+                return True
+        return False
+    except TypeError:
+        return False
+
+
+def _run_selector_affirmative(selectors):
+    try:
+        assert(_run_selector_include_affirmative(selectors['include']))
+        return True
+    except AssertionError:
+        try:
+            assert(_run_selector_exclude_affirmative(selectors['exclude']))
+            return False
+        except AssertionError:
+            return True
+        
+
+def _filter_final_playbook_output(raw, opts):
     #print "raw:\n{}".format(raw)
     as_struct = yaml.load(raw)
     
-    
+    # filter hosts
+    #new_hosts_list = []
+    #hosts_list = as_struct['hosts']
+    #for host in hosts_list:
+        #try:
+            #assert('run_selectors' in host)
+            #if _run_selector_affirmative(host['run_selectors']):
+                #new_hosts_list.append(host)
+                #continue            
+        #except AssertionError:
+            #new_hosts_list.append(host)
+            #continue
     
     as_string = yaml.dump(as_struct)    
     return as_string
@@ -347,7 +406,7 @@ def write_ansible_playbook(opts):
             with open(ansible_playbook_filepath(opts), "w") as fh:
                 order, playbook_output = _playbook_from_list( directives=directives, parameters=params )
                 
-                playbook_output = _filter_final_playbook_output(playbook_output)
+                playbook_output = _filter_final_playbook_output(playbook_output, opts)
                 
                 if bool(playbook_output):
                     fh.write(playbook_output)
@@ -379,7 +438,8 @@ if __name__ == '__main__':
     progargs = ( ( "machine", "positional", "the name of the machine (or group) whose config will be parsed" ),
                  ( "playbook-output-file", "full", "the playbook output file (for testing, use discouraged)"),
                  ( "hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
-                 ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ) )
+                 ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ),
+                 ( "selectors", "full", "a list of run selectors to be applied to include/exclude directives" ) )
     
     for arginfo in progargs:
         optname, opttype, opthelp = arginfo

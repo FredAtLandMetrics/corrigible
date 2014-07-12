@@ -1,0 +1,27 @@
+hosts:
+    - hostname: 'a'
+      hostgroup: 'aa'
+      ip_address: 1.2.3.4
+    - hostname: 'b'
+      hostgroup: 'bb'
+      ip_address: 1.2.3.4
+    - hostname: 'c'
+      hostgroup: 'cc'
+      ip_address: 1.2.3.4
+      run_selectors:
+        exclude:
+          - testrs5
+    - hostname: 'd'
+      hostgroup: 'dd'
+      ip_address: 1.2.3.4
+      run_selectors:
+        include:
+          - testrs5
+        exclude:
+          - ALL
+    - hostname: 'e'
+      hostgroup: 'ee'
+      ip_address: 1.2.3.4
+      run_selectors:
+        include:
+          - testrs1

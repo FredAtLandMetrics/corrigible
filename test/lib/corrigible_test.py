@@ -62,6 +62,13 @@ class CorrigibleTest(unittest.TestCase):
             
         return ret
     
+    def hostgroup_hostnames(self, hosts_filepath, hostgroup):
+        lines = self.hostgroup_lines(hosts_filepath,hostgroup)
+        ret = []
+        for host in [" ".split(line) for line in lines]:
+            ret.append(host)
+        return ret
+    
     def playbook_as_struct(self):
         """read the playbook referred to by self.output_playbook_filepath as a yaml file and return the struct"""
         ret = None
