@@ -27,7 +27,7 @@ class CorrigibleTest(unittest.TestCase):
         call_list.append("--hosts-output-file={}".format(self.output_hostsfile_filepath))
         
         try:
-            call_list.append('--run_selectors={}'.format(kwargs['run_selectors']))
+            call_list.append('--selectors={}'.format(kwargs['run_selectors']))
         except KeyError:
             pass
         

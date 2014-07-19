@@ -48,9 +48,16 @@ class TestRunSelectors(CorrigibleTest):
         
         # determine that the hosts file looks like it should with no run selectors
         
-        #self.rerun_corrigible(machine_config="test_rs_hosts",
-                              #generate_files_only=True,
-                              #run_selectors="testrs1")
+        self.rerun_corrigible(machine_config="test_rs_hosts",
+                              generate_files_only=True,
+                              run_selectors="testrs5")
+        incmap =  [ [ 'a', True ],
+                    [ 'b', True ],
+                    [ 'c', False ],
+                    [ 'd', True ],
+                    [ 'e', True ] ]
+        self._assert_hostsmap(incmap)
+        
         #self.rerun_corrigible(machine_config="test_rs_hosts",
                               #generate_files_only=True,
                               #run_selectors="testrs5")
