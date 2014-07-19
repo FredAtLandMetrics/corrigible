@@ -16,11 +16,23 @@ class CorrigibleTest(unittest.TestCase):
         if os.path.isfile(self.output_hostsfile_filepath):
             os.remove(self.output_hostsfile_filepath)
             
+        call_list =  [self.corrigible_exec_filepath, kwargs['machine_config']]
         try:
             assert(bool(kwargs['generate_files_only']))
-            call([self.corrigible_exec_filepath, kwargs['machine_config'], "--generate-files-only", "--playbook-output-file={}".format(self.output_playbook_filepath), "--hosts-output-file={}".format(self.output_hostsfile_filepath)], env=os.environ.copy())
+            call_list.append("--generate-files-only")
+        except AssertionError:
+            pass
+        
+        call_list.append("--playbook-output-file={}".format(self.output_playbook_filepath))
+        call_list.append("--hosts-output-file={}".format(self.output_hostsfile_filepath))
+        
+        try:
+            call_list.append('--run_selectors={}'.format(kwargs['run_selectors']))
         except KeyError:
-            call([self.corrigible_exec_filepath, kwargs['machine_config'], "--playbook-output-file={}".format(self.output_playbook_filepath), "--hosts-output-file={}".format(self.output_hostsfile_filepath)], env=os.environ.copy())
+            pass
+        
+        call(call_list, env=os.environ.copy())
+        
         
     def hosts_groups_from_file(self, hosts_filepath):
         """given a path to an ansible hosts file, return the list of all host groups in the hostsfile"""

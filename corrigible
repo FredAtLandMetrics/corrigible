@@ -255,22 +255,43 @@ def provision_machine(opts):
     run_ansible_playbook(filepath=ansible_playbook_filepath(opts),
                          hostsfilepath=ansible_hostsfile_filepath(opts))
 
-machine_conf = None
+_machine_conf = None
 def machine_config(opts):
-    global machine_conf
+    global _machine_conf
     try:
-        if machine_conf is None:
+        if _machine_conf is None:
             machine_name = opts["machine"]
             directive_file_stack_push(machine_name)
             machine_config_filepath = os.path.join(machines_dirpath(), "{}.meta".format(machine_name))
             #print "INFO: loading machine config for: {}, at {}".format(machine_name, machine_config_filepath)
             with open (machine_config_filepath, "r") as machine_def_fh: 
                 rendered_machine_def_str = Template(machine_def_fh.read()).render(**os.environ)
-                machine_conf = yaml.load(rendered_machine_def_str)
+                
+                rendered_machine_def_str = _filter_machine_def(rendered_machine_def_str, opts)
+                print "rendered_machine_def_str: {}".format(rendered_machine_def_str)
+                _machine_conf = yaml.load(rendered_machine_def_str)
+                
+                
     except IOError:
         print "\nERR: machine config not found at: {}, machine_config will be None\n".format(machine_config_filepath)
-    return machine_conf
+    return _machine_conf
     
+def _filter_machine_def(raw, opts):
+    machine_conf = yaml.load(raw)
+    
+    hosts_list = machine_conf['hosts']
+    print "hosts_list: {}".format(str(hosts_list))
+    new_hosts_list = []
+    for host in hosts_list:
+        print "host: {}".format(str(host))
+        if 'run_selectors' in host and not _run_selector_affirmative(host['run_selectors']):
+            continue
+        new_hosts_list.append(host)
+    machine_conf['hosts'] = new_hosts_list    
+    print "pre-dump"
+    as_string = yaml.dump(machine_conf)    
+    print "as_string: {}".format(as_string)
+    return as_string
 
 def machine_name(opts):
     return opts["machine"]
@@ -288,6 +309,7 @@ def ansible_playbook_filepath(opts):
         return "/tmp/provision_{}.playbook".format(machine_name(opts))
 
 def write_ansible_hosts(opts):
+    mconf = None
     try:
         mconf = machine_config(opts)
         hostrecs = mconf['hosts']
@@ -329,6 +351,8 @@ def get_run_selectors_list():
 def _run_selector_include_affirmative(include_selectors):
     try:
         run_selectors = get_run_selectors_list()
+        print('_run_selector_include_affirmative - include_selectors: {}'.format(str(include_selectors)))
+        print('_run_selector_include_affirmative - run_selectors: {}'.format(str(run_selectors)))
         
         for sel in include_selectors:
             if sel == 'ALL':
@@ -340,13 +364,16 @@ def _run_selector_include_affirmative(include_selectors):
         return False
 
 def _run_selector_exclude_affirmative(exclude_selectors):
+    
+    
     try:
         run_selectors = get_run_selectors_list()
-        
+        print('_run_selector_exclude_affirmative - exclude_selectors: {}'.format(str(exclude_selectors)))
+        print('_run_selector_exclude_affirmative - run_selectors: {}'.format(str(run_selectors)))
         for sel in exclude_selectors:
-            if sel == 'ALL':
+            if str(sel) == 'ALL':
                 return True
-            if sel in run_selectors:
+            if str(sel) in run_selectors:
                 return True
         return False
     except TypeError:
@@ -357,16 +384,16 @@ def _run_selector_affirmative(selectors):
     try:
         assert(_run_selector_include_affirmative(selectors['include']))
         return True
-    except AssertionError:
+    except (AssertionError, KeyError):
         try:
             assert(_run_selector_exclude_affirmative(selectors['exclude']))
             return False
-        except AssertionError:
+        except (AssertionError, KeyError):
             return True
         
 
 def _filter_final_playbook_output(raw, opts):
-    #print "raw:\n{}".format(raw)
+    print "raw:\n{}".format(raw)
     as_struct = yaml.load(raw)
     
     # filter hosts
@@ -386,6 +413,7 @@ def _filter_final_playbook_output(raw, opts):
     return as_string
   
 def write_ansible_playbook(opts):
+    mconf = None
     try:
         mconf = machine_config(opts)
         

@@ -27,6 +27,7 @@ class TestRunSelectors(CorrigibleTest):
         
     def _assert_hostsmap(self, incmap):
         hosts = self.hostgroup_hostnames(self.output_hostsfile_filepath, 'all')
+        print "hosts: {}".format(str(hosts))
         for res_pair in incmap:
             hostname, present = res_pair
             print "testing host: {}, present: {}".format(hostname, present)
