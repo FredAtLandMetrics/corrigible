@@ -249,4 +249,5 @@ Note that *parameters in higher-level directive container files and in machine c
 
 Project Status
 ==============
-The hard parts work and there's tests around key points. Run selectors are not yet implemented and testing has been limited to examination of generated ansible hosts and playbook files. Usage against an actual machine has not yet been done.
+The hard parts work and there's tests around key points. Run selectors are now implemented.
+ Next I'll be testing corrigible in real-world provisioning situations. I expect things will break.

@@ -3,7 +3,8 @@ Project Status
 * Minimal suite of tests in place
 * Directives and parameter substitution working
 * Hosts and playbook files are being generated
+* Simplified file transfer syntax (don't have to use directives)
+* Run selectors working for hosts and directives
 
 Not Yet Working
 ===============
-* Simple file transfer
