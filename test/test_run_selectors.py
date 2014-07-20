@@ -27,10 +27,10 @@ class TestRunSelectors(CorrigibleTest):
         
     def _assert_hostsmap(self, incmap):
         hosts = self.hostgroup_hostnames(self.output_hostsfile_filepath, 'all')
-        print "hosts: {}".format(str(hosts))
+        #print "hosts: {}".format(str(hosts))
         for res_pair in incmap:
             hostname, present = res_pair
-            print "testing host: {}, present: {}".format(hostname, present)
+            #print "testing host: {}, present: {}".format(hostname, present)
             if present is None or present is False:
                 self.assertFalse(hostname in hosts)
             elif present is True:
@@ -65,7 +65,31 @@ class TestRunSelectors(CorrigibleTest):
                               #generate_files_only=True,
                               #run_selectors="testrs1,testrs5")
                               
-                            
+    def test_directives(self):
+        self.rerun_corrigible(machine_config="test_rs_hosts",
+                              generate_files_only=True)
+        s = self.playbook_as_struct()
+        self.assertTrue(type(s) is list and len(s) == 1)
+        self.assertTrue(type(s[0]) is dict)
+        self.assertTrue('tasks' in s[0].keys())
+        self.assertTrue(type(s[0]['tasks']) is list)
+        self.assertTrue(type(s[0]['tasks'][0]) is dict)
+        self.assertTrue('apt' in s[0]['tasks'][0].keys())
+        self.assertFalse('cron' in s[0]['tasks'][0].keys())
+        self.rerun_corrigible(machine_config="test_rs_hosts",
+                              generate_files_only=True,
+                              run_selectors="update_dnsservers")
+        s = self.playbook_as_struct()
+        print "SSSSSSSSSS: {}, {}".format(type(s), str(s))
+        self.assertTrue(type(s) is list and len(s) == 1)
+        self.assertTrue(type(s[0]) is dict)
+        self.assertTrue('tasks' in s[0].keys())
+        self.assertTrue(type(s[0]['tasks']) is list)
+        self.assertTrue(type(s[0]['tasks'][0]) is dict)
+        self.assertTrue('cron' in s[0]['tasks'][0].keys())
+        self.assertFalse('apt' in s[0]['tasks'][0].keys())
+        pass
+    
 if __name__ == '__main__':
     unittest.main()   
       

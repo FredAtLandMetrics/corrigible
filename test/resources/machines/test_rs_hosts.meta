@@ -25,3 +25,17 @@ hosts:
       run_selectors:
         include:
           - testrs1
+
+directives:
+    - directive: apt_upgrade
+      run_selectors:
+          exclude:
+            - update_dnsservers      
+    - directive: install_cron
+      run_selectors:
+          exclude:
+            - ALL
+          include:
+            - update_dnsservers
+
+      

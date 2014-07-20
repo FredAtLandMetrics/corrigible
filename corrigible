@@ -38,8 +38,12 @@ def _playbook_from_list(**kwargs):
                 directive_file_stack_push('files')
                 dopop = True
             
-            playbook_text_tuple_list.append(_playbook_from_dict(directives=directives_dict,
-                                                                parameters=params))
+            try:
+                playbook_text_tuple_list.append(_playbook_from_dict(directives=directives_dict,
+                                                                    parameters=params))
+            except DirectiveOmittedByRunSelector:
+                pass
+            
             if dopop:
                 directive_file_stack_pop()
                 
@@ -69,6 +73,9 @@ class DirectiveFileDoesNotExist(Exception):
     pass
       
 class UnknownDirectiveEncountered(Exception):
+    pass
+
+class DirectiveOmittedByRunSelector(Exception):
     pass
       
 def _text_from_tuple_list(*args):
@@ -186,6 +193,11 @@ def _playbook_from_dict(**kwargs):
             
             try:
                 directive_name = directives_dict['directive']
+                
+                if 'run_selectors' in directives_dict and \
+                   not _run_selector_affirmative(directives_dict['run_selectors']):
+                    raise DirectiveOmittedByRunSelector()
+                
                 return _playbook_from_dict__directive(directive_name, params)
             except KeyError:
                 try:
@@ -229,7 +241,7 @@ def machine_config(opts):
                 rendered_machine_def_str = Template(machine_def_fh.read()).render(**os.environ)
                 
                 rendered_machine_def_str = _filter_machine_def(rendered_machine_def_str, opts)
-                print "rendered_machine_def_str: {}".format(rendered_machine_def_str)
+                #print "rendered_machine_def_str: {}".format(rendered_machine_def_str)
                 _machine_conf = yaml.load(rendered_machine_def_str)
                 
                 
@@ -241,17 +253,17 @@ def _filter_machine_def(raw, opts):
     machine_conf = yaml.load(raw)
     
     hosts_list = machine_conf['hosts']
-    print "hosts_list: {}".format(str(hosts_list))
+    #print "hosts_list: {}".format(str(hosts_list))
     new_hosts_list = []
     for host in hosts_list:
-        print "host: {}".format(str(host))
+        #print "host: {}".format(str(host))
         if 'run_selectors' in host and not _run_selector_affirmative(host['run_selectors']):
             continue
         new_hosts_list.append(host)
     machine_conf['hosts'] = new_hosts_list    
-    print "pre-dump"
+    #print "pre-dump"
     as_string = yaml.dump(machine_conf)    
-    print "as_string: {}".format(as_string)
+    #print "as_string: {}".format(as_string)
     return as_string
 
 def machine_name(opts):
@@ -282,7 +294,7 @@ def write_ansible_hosts(opts):
                 fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
             fh.write("\n")
     except TypeError:
-        print "machine_config: {}".format(str(mconf))
+        #print "machine_config: {}".format(str(mconf))
         if mconf is None:
             print "ERR: No machine config, not writing ansible hosts file"
             return
@@ -354,7 +366,7 @@ def _run_selector_affirmative(selectors):
         
 
 def _filter_final_playbook_output(raw, opts):
-    print "raw:\n{}".format(raw)
+    #print "raw:\n{}".format(raw)
     as_struct = yaml.load(raw)
     
     # filter hosts
@@ -449,7 +461,7 @@ if __name__ == '__main__':
             selectors = [s.trim() for s in options['selectors'].split(',')]
         elif type(options['selectors']) is str and bool(options['selectors']):
             selectors = [options['selectors']]
-        print "SETTING SELECTORS!!"
+        #print "SETTING SELECTORS!!"
         set_run_selectors_list(selectors)
     except (KeyError, AttributeError, TypeError):
         pass
