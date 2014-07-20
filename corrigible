@@ -4,10 +4,8 @@ import argparse
 import os
 import yaml
 import heapq
-#import re
 import jinja2
 import copy
-#from lib.provision_files import 
 from jinja2 import Template
 from corrigible.lib.dirpaths import machines_dirpath, directives_dirpath, files_dirpath
 from corrigible.lib.provision_files import directive_index, directive_filepath
@@ -15,46 +13,9 @@ from corrigible.lib.provision_files import directive_index, directive_filepath
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
 PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
-
-#machines_dirpath() = os.path.join(PROVISION_ROOT_DIRPATH, 'machines')
-#directives_dirpath = os.path.join(PROVISION_ROOT_DIRPATH, 'directives')
-#files_dirpath = os.path.join(PROVISION_ROOT_DIRPATH, 'files')
-
 MAX_DIRECTIVE_ORDER = 9999999
 
 jinja2.Environment(autoescape=False)
-
-
-
-
-#def _gen_playbook():
-    
-    #filepath = "/tmp/provision_{}.playbook".format(machine)
-    #with open(filepath, "w") as fh:
-        #order, txt = \
-            #_playbook_from_list(
-                #directives=machine_config['directives'],
-                #parameters=machine_config['parameters']
-            #)
-        #fh.write(txt)
-                                                     ##parameters=params))
-    #return filepath 
-
-#def _gen_ansible_hostsfile():
-    #filepath = "/tmp/provision_{}.hosts".format(machine)
-    #hostrecs = machine_config['hosts']
-    
-    ## this should read the host groups from the machine config and write something appropriate
-    
-    #with open(filepath, "w") as fh:
-        #fh.write("[all]\n")
-        
-        #for hostrec in hostrecs:
-            #fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
-        #fh.write("\n")
-        
-    #fh.close()
-        
 
 def _playbook_from_list(**kwargs):
     try:
@@ -482,6 +443,18 @@ if __name__ == '__main__':
     options = {}
     for opt, val in args.iteritems():
         options[opt] = val
+        
+    try:
+        if "," in options['selectors']:
+            selectors = [s.trim() for s in options['selectors'].split(',')]
+        elif type(options['selectors']) is str and bool(options['selectors']):
+            selectors = [options['selectors']]
+        print "SETTING SELECTORS!!"
+        set_run_selectors_list(selectors)
+    except (KeyError, AttributeError, TypeError):
+        pass
+    
+        
     
     write_ansible_hosts(options)
     write_ansible_playbook(options)
