@@ -50,7 +50,7 @@ and add the following exports:
 
   export CORRIGIBLE_PATH=$HOME/myproject/provision
   
-Now switch to your project's virtualenv:  
+Now switch to your project's virtualenv (even if you're already there because of the mkvirtualenv command):  
   
   workon <your project>
   
