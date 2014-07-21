@@ -6,6 +6,7 @@ import yaml
 import heapq
 import jinja2
 import copy
+import subprocess
 from jinja2 import Template
 from corrigible.lib.dirpaths import machines_dirpath, directives_dirpath, files_dirpath
 from corrigible.lib.provision_files import directive_index, directive_filepath
@@ -99,7 +100,7 @@ def _playbook_from_dict__directive(directive_name, params):
     directive_ndx = directive_index(directive_name)
     #directive_filepath = directive_filepath(directive_name)
     directive_path = directive_filepath(directive_name)
-
+    print "directive path: {}".format(directive_path)
     try:
                         
         with open(directive_path, "r") as fh:
@@ -210,23 +211,22 @@ def _playbook_from_dict(**kwargs):
         raise RequiredParameterDirectivesNotProvided()
 
         
-def _run_ansible_playbook(**kwargs):
-    pass
+def run_ansible_playbook(**kwargs):
+    
+    # so all refs to files can start with 'files/'
+    os.chdir(os.path.join(files_dirpath(),'..'))
+    
+    
+    environ = { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
+                             '/usr/local/sbin' }
+    
+    subprocess.call(["ansible-playbook",
+                     '-i', kwargs['hosts_filepath'],
+                     kwargs['playbook_filepath']], env=environ)
 
 def provision_machine(opts):
-    #machine = machine_name
-
-    #with open (os.path.join(machines_dirpath(), "{}.machine.yml".format(machine_name)), "r") as machine_def_str: 
-        
-        ## generate the playbook
-        ##rendered_machine_def_str = Template(machine_def_str.read()).render(**os.environ)
-        ##machine_config = yaml.load(rendered_machine_def_str)
-        #tmp_ansible_hostsfile_filepath = _gen_ansible_hostsfile()
-        #tmp_playbook_filepath = _gen_playbook()
-        
-        ## run it
-    run_ansible_playbook(filepath=ansible_playbook_filepath(opts),
-                         hostsfilepath=ansible_hostsfile_filepath(opts))
+    run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(opts),
+                         hosts_filepath=ansible_hostsfile_filepath(opts))
 
 _machine_conf = None
 def machine_config(opts):
@@ -271,14 +271,18 @@ def machine_name(opts):
 
 def ansible_hostsfile_filepath(opts):
     try:
-        return opts["hosts_output_file"]
-    except KeyError:
+        output_filepath = opts["hosts_output_file"]
+        assert(output_filepath is not None)
+        return output_filepath
+    except (AssertionError, KeyError):
         return "/tmp/provision_{}.hosts".format(machine_name(opts))
 
 def ansible_playbook_filepath(opts):
     try:
-        return opts["playbook_output_file"]
-    except KeyError:
+        output_filepath = opts["playbook_output_file"]
+        assert(output_filepath is not None)
+        return output_filepath
+    except (AssertionError, KeyError):
         return "/tmp/provision_{}.playbook".format(machine_name(opts))
 
 def write_ansible_hosts(opts):
@@ -287,7 +291,9 @@ def write_ansible_hosts(opts):
         mconf = machine_config(opts)
         hostrecs = mconf['hosts']
         
-        with open(ansible_hostsfile_filepath(opts), "w") as fh:
+        hosts_filepath = ansible_hostsfile_filepath(opts)
+        print "writing to: {}".format(hosts_filepath)
+        with open(hosts_filepath, "w") as fh:
             fh.write("[all]\n")
             
             for hostrec in hostrecs:
