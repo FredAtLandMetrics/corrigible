@@ -1,4 +1,13 @@
+General TODO
+============
 1) Try to use for real world uses
 2) Write tests based on failures
 3) Make tests pass
 4) Repeat
+
+Specific TODO resulting from #1 above
+=====================================
+1) implement subdirs in machines, directives, and files
+  a) for machines and directives, files in subdirs will be treated as if they are
+     in the top-level directories
+  b) files in subdirs will be referenced by paths relative to toplevel files dir
