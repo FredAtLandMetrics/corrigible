@@ -1,0 +1,64 @@
+Installation
+============
+
+Overview
+--------
+The python tool, pip, is how I install corrigible.  At some point I'll make proper debs, but, for now, it's python developer style.
+
+I'm assuming knowledge of virtualenv and virtualenvwrapper.
+
+Prepare your project
+--------------------
+By "your project", I just mean some directory to store your corrigible files.  This could just be a small part of another codebase if corrigible's use is tied to a certain bit of software or it could be a repository of configurations for large-scale deployments of complex systems.  
+
+So, with that in mind:
+
+Make an environment for your project (if you don't have one already). At the prompt,
+
+  mkvirtualenv <your project>
+
+Create some directories to hold corrigible-related files (these can change, but this is what I envision as "standard" locations):
+
+  cd /home/mclovin/myproject
+  install -d provision/machines provision/files provision/directives
+  
+Install Corrigible
+------------------
+Clone the corrigible github repo with:
+
+  cd <whereever you keep things like repos of system mgmt software>
+  git clone git@github.com:FredAtLandMetrics/corrigible.git
+  
+then install requirements:
+
+  cd corrigible
+  pip install -r requirements.txt
+  
+Configure the virtualenv environment
+------------------------------------
+To make the corrigible binary available and tell corrigible where to find the files you'll define to provision your systems, set your path in the postactivate script (<virtualenvwrapperdir/<your project>/bin/postactivate) by adding the line:
+
+  export PATH="$PATH:<absolute path to corrigible sources>"
+  
+and add the following exports:
+
+  export CORRIGIBLE_MACHINES=$HOME/myproject/provision/machines
+  export CORRIGIBLE_DIRECTIVES=$HOME/myproject/provision/directives
+  export CORRIGIBLE_FILES=$HOME/myproject/provision/files
+  
+**Note** that, if you use the directory names of 'machines', 'directives', and 'files'. then you can also shorthand this with:
+
+  export CORRIGIBLE_PATH=$HOME/myproject/provision
+  
+Now switch to your project's virtualenv:  
+  
+  workon <your project>
+  
+Prosper
+-------
+You can now start making machine config and directive files.  The README.md file will be very helpful, as will the test files in test/resources/.
+  
+  
+
+
+  
