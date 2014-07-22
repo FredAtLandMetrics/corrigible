@@ -24,3 +24,5 @@ Big Picture
 2) refer 'plans' not directives in code
 3) rename .meta.yml to .system.yml
 4) refer to 'systems' and not 'machines'
+5) in the plan and system files, shorten to src and dst
+6) in the plan and system files, instead of directives/directive do plan/item
