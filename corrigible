@@ -129,6 +129,9 @@ def _playbook_from_dict__directive(directive_name, params):
             #return (directive_index, template_text)
     except TypeError:
         raise DirectiveFileDoesNotExist(directive_name)
+    except UnknownDirectiveEncountered:
+        print "encountered error with {}".format(directive_path)
+        raise
     except jinja2.exceptions.TemplateSyntaxError:
         #print "ERR: Template syntax error in {}".format(directive_filepath)
         raise        
@@ -139,7 +142,7 @@ def _playbook_from_dict__files(files_list, params):
     
     assert(bool(files_list))
     
-    tasks_header = '- hosts: all\n  user: {}\n  sudo: {}\n  tasks:\n'.format(params['sudouser'], params['sudo'])
+    tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
     
     files = {}
     for f in files_list:
@@ -195,6 +198,7 @@ def _playbook_from_dict(**kwargs):
             
             try:
                 directive_name = directives_dict['directive']
+                print "directive name: {}".format(directive_name)
                 
                 if 'run_selectors' in directives_dict and \
                    not _run_selector_affirmative(directives_dict['run_selectors']):
@@ -203,7 +207,9 @@ def _playbook_from_dict(**kwargs):
                 return _playbook_from_dict__directive(directive_name, params)
             except KeyError:
                 try:
+                    print "FILES!!!"
                     files_list = directives_dict['files']
+                    print "files_list: {}".format(str(files_list))
                     return _playbook_from_dict__files(files_list, params)
                 except KeyError:
                     raise UnknownDirectiveEncountered()
