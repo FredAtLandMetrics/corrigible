@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 def envvar_cap_var(environment_variable_name, **kwargs):
     try:
@@ -20,3 +21,12 @@ def files_dirpath():
 
 def corrigible_path():
     return envvar_cap_var('CORRIGIBLE_PATH',default='/usr/local/etc/corrigible')
+
+_temp_exec_dir = None
+def temp_exec_dirpath():
+    global _temp_exec_dir
+    if _temp_exec_dir is None:
+        _temp_exec_dir = tempfile.mkdtemp()
+        os.symlink(files_dirpath(),
+                   os.path.join(_temp_exec_dir,os.path.basename(files_dirpath())))
+    return _temp_exec_dir

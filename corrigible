@@ -7,8 +7,9 @@ import heapq
 import jinja2
 import copy
 import subprocess
+import copy
 from jinja2 import Template
-from corrigible.lib.dirpaths import machines_dirpath, directives_dirpath, files_dirpath
+from corrigible.lib.dirpaths import machines_dirpath, directives_dirpath, files_dirpath, temp_exec_dirpath
 from corrigible.lib.provision_files import directive_index, directive_filepath
 
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
@@ -213,14 +214,18 @@ def _playbook_from_dict(**kwargs):
         
 def run_ansible_playbook(**kwargs):
     
+    
+    environ = _merge_args(os.environ,
+                          { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
+                            '/usr/local/sbin' })
+    
+    #environ = { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
+                        #'/usr/local/sbin' }
+    
     # so all refs to files can start with 'files/'
-    os.chdir(os.path.join(files_dirpath(),'..'))
+    os.chdir(temp_exec_dirpath())
     
-    
-    environ = { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
-                             '/usr/local/sbin' }
-    
-    subprocess.call(["ansible-playbook",
+    subprocess.call(["ansible-playbook","-vvvv",
                      '-i', kwargs['hosts_filepath'],
                      kwargs['playbook_filepath']], env=environ)
 
@@ -275,7 +280,8 @@ def ansible_hostsfile_filepath(opts):
         assert(output_filepath is not None)
         return output_filepath
     except (AssertionError, KeyError):
-        return "/tmp/provision_{}.hosts".format(machine_name(opts))
+        return os.path.join(temp_exec_dirpath(),
+                            "provision_{}.hosts".format(machine_name(opts)))
 
 def ansible_playbook_filepath(opts):
     try:
@@ -283,7 +289,8 @@ def ansible_playbook_filepath(opts):
         assert(output_filepath is not None)
         return output_filepath
     except (AssertionError, KeyError):
-        return "/tmp/provision_{}.playbook".format(machine_name(opts))
+        return os.path.join(temp_exec_dirpath(),
+                            "provision_{}.playbook".format(machine_name(opts)))
 
 def write_ansible_hosts(opts):
     mconf = None
@@ -328,6 +335,10 @@ def get_run_selectors_list():
     return _run_selectors
 
 def _run_selector_include_affirmative(include_selectors):
+
+    if (type(include_selectors) is not list):
+        return _run_selector_exclude_affirmative([include_selectors])
+
     try:
         run_selectors = get_run_selectors_list()
         #print('_run_selector_include_affirmative - include_selectors: {}'.format(str(include_selectors)))
@@ -344,11 +355,13 @@ def _run_selector_include_affirmative(include_selectors):
 
 def _run_selector_exclude_affirmative(exclude_selectors):
     
+    if (type(exclude_selectors) is not list):
+        return _run_selector_exclude_affirmative([exclude_selectors])
     
     try:
         run_selectors = get_run_selectors_list()
-        #print('_run_selector_exclude_affirmative - exclude_selectors: {}'.format(str(exclude_selectors)))
-        #print('_run_selector_exclude_affirmative - run_selectors: {}'.format(str(run_selectors)))
+        print('_run_selector_exclude_affirmative - exclude_selectors: {}'.format(str(exclude_selectors)))
+        print('_run_selector_exclude_affirmative - run_selectors: {}'.format(str(run_selectors)))
         for sel in exclude_selectors:
             if str(sel) == 'ALL':
                 return True
