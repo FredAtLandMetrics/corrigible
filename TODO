@@ -16,3 +16,11 @@ Specific TODO resulting from #1 above
            end up having to reference an ansible file to do anything interesting
   solution: inline ansible stanzas in directive files (and machine meta files)
 3) I'd like it if the hosts line was optional in the ansible stanzas
+4) Files sections in directives lists need to have parameter capability so that I can define key/val pairs that apply to every file in the list
+
+Big Picture
+===========
+1) rename .directive.yml to .plan.yml
+2) refer 'plans' not directives in code
+3) rename .meta.yml to .system.yml
+4) refer to 'systems' and not 'machines'
