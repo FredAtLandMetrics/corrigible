@@ -8,6 +8,11 @@ General TODO
 Specific TODO resulting from #1 above
 =====================================
 1) implement subdirs in machines, directives, and files
-  a) for machines and directives, files in subdirs will be treated as if they are
-     in the top-level directories
-  b) files in subdirs will be referenced by paths relative to toplevel files dir
+  * for machines and directives, files in subdirs will be treated as if they are
+    in the top-level directories
+  * files in subdirs will be referenced by paths relative to toplevel files dir
+2) inline ansible directives
+  problem: it's a bit more tedious than it needs to be to use files because you
+           end up having to reference an ansible file to do anything interesting
+  solution: inline ansible stanzas in directive files (and machine meta files)
+3) I'd like it if the hosts line was optional in the ansible stanzas
