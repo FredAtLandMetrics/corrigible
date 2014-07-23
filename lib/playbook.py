@@ -14,7 +14,7 @@ from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.lib.selector import run_selector_affirmative
 jinja2.Environment(autoescape=False)
 
-MAX_DIRECTIVE_ORDER = 9999999
+MAX_PLAN_ORDER = 9999999
 
 def ansible_playbook_filepath(opts):
     try:
@@ -120,7 +120,7 @@ def _playbook_from_list(**kwargs):
         
         
         
-        return (MAX_DIRECTIVE_ORDER, ret)
+        return (MAX_PLAN_ORDER, ret)
     except KeyError:
         raise RequiredParameterPlansNotProvided()
    

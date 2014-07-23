@@ -1,10 +1,11 @@
 Project Status
 ==============
 * Minimal suite of tests in place
-* Directives and parameter substitution working
-* Hosts and playbook files are being generated
-* Simplified file transfer syntax (don't have to use directives)
-* Run selectors working for hosts and directives
+* Plans and parameter substitution working
+* Hosts and playbook files are being generated and executed
+* Simplified file transfer syntax (don't have to use ansible file module)
+* Run selectors working for hosts and plans
 
 Not Yet Working
 ===============
+TBD

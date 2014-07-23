@@ -20,7 +20,7 @@ os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 PLAYBOOK_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-output.yml"
 HOSTS_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
 
-class TestMachineConfig(CorrigibleTest):
+class TestComplexSystemConfig(CorrigibleTest):
 
     def setUp(self):
         self.output_playbook_filepath = PLAYBOOK_FILEPATH__SYSTEMCONF_TEST

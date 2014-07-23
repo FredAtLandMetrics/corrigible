@@ -20,7 +20,7 @@ Make an environment for your project (if you don't have one already). At the pro
 Create some directories to hold corrigible-related files (these can change, but this is what I envision as "standard" locations):
 
   cd /home/mclovin/myproject
-  install -d provision/machines provision/files provision/directives
+  install -d provision/systems provision/files provision/plans
   
 Install Corrigible
 ------------------
@@ -42,11 +42,11 @@ To make the corrigible binary available and tell corrigible where to find the fi
   
 and add the following exports:
 
-  export CORRIGIBLE_MACHINES=$HOME/myproject/provision/machines
-  export CORRIGIBLE_DIRECTIVES=$HOME/myproject/provision/directives
+  export CORRIGIBLE_SYSTEMS=$HOME/myproject/provision/systems
+  export CORRIGIBLE_PLANS=$HOME/myproject/provision/plans
   export CORRIGIBLE_FILES=$HOME/myproject/provision/files
   
-**Note** that, if you use the directory names of 'machines', 'directives', and 'files'. then you can also shorthand this with:
+**Note** that, if you use the directory names of 'systems', 'plans', and 'files'. then you can also shorthand this with:
 
   export CORRIGIBLE_PATH=$HOME/myproject/provision
   
@@ -56,7 +56,7 @@ Now switch to your project's virtualenv (even if you're already there because of
   
 Prosper
 -------
-You can now start making machine config and directive files.  The README.md file will be very helpful, as will the test files in test/resources/.
+You can now start making system config and plan files.  The README.md file will be very helpful, as will the test files in test/resources/.
   
   
 
