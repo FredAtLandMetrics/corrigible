@@ -2,15 +2,22 @@
 
 import argparse
 import os
-import yaml
-import heapq
-import jinja2
-import copy
-import subprocess
-import copy
-from jinja2 import Template
-from corrigible.lib.dirpaths import machines_dirpath, directives_dirpath, files_dirpath, temp_exec_dirpath
-from corrigible.lib.provision_files import directive_index, directive_filepath
+#import yaml
+#import heapq
+#import jinja2
+#import copy
+#import subprocess
+#import copy
+#from jinja2 import Template
+#from corrigible.lib.dirpaths import systems_dirpath, plans_dirpath, files_dirpath, temp_exec_dirpath
+#from corrigible.lib.plan import plan_index, plan_filepath
+#from corrigible.lib.exceptions import RequiredParameterPlansNotProvided, \
+                                      #PlansDictContainedNoPlans, \
+                                      #PlanFileDoesNotExist, \
+                                      #UnknownPlanEncountered, \
+                                      #PlanOmittedByRunSelector
+#from corrigible.lib.playbook import write_ansible_playbook
+#from corrigible.lib.system import system_config
 
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
@@ -19,437 +26,7 @@ MAX_DIRECTIVE_ORDER = 9999999
 
 jinja2.Environment(autoescape=False)
 
-def _playbook_from_list(**kwargs):
-    try:
-        params = kwargs['parameters']
-    except KeyError:
-        params = {}
-    
-    try:
-        retlist= []
-        
-        #print "directives({}), parameters({})".format(kwargs['directives'], params)
-        playbook_text_tuple_list = []
-        for directives_dict in kwargs['directives']:
-            
-            dopop = False
-            if 'directive' in directives_dict:
-                directive_file_stack_push(directives_dict['directive'])
-                dopop = True
-            elif 'files' in directives_dict:
-                directive_file_stack_push('files')
-                dopop = True
-            
-            try:
-                playbook_text_tuple_list.append(_playbook_from_dict(directives=directives_dict,
-                                                                    parameters=params))
-            except DirectiveOmittedByRunSelector:
-                pass
-            
-            if dopop:
-                directive_file_stack_pop()
-                
-        ret = _text_from_tuple_list(*playbook_text_tuple_list)
-        
-        
-        
-        return (MAX_DIRECTIVE_ORDER, ret)
-    except KeyError:
-        raise RequiredParameterDirectivesNotProvided()
-   
-def _merge_args(args_base, args_adding):
-    #print "_merge_args: base({}), adding({})".format(args_base, args_adding)
-    ret = copy.copy(args_base)
-    for k,y in args_adding.iteritems():
-        ret[k] = y
-    #print "_merge_args returning {}".format(ret)
-    return ret
-   
-class RequiredParameterDirectivesNotProvided(Exception):
-    pass
-   
-class DirectivesDictContainedNoDirectives(Exception):
-    pass
-      
-class DirectiveFileDoesNotExist(Exception):
-    pass
-      
-class UnknownDirectiveEncountered(Exception):
-    pass
 
-class DirectiveOmittedByRunSelector(Exception):
-    pass
-      
-def _text_from_tuple_list(*args):
-    retlist = []
-    for tuple_list in args:
-        #print "tuple_list: {}".format(tuple_list)
-        for playbook_text_tuple in tuple_list:
-            ordernum, playbook_text = playbook_text_tuple
-            heapq.heappush(retlist, (ordernum, playbook_text))
-    ret = ""
-    for item in sorted(retlist):
-        order, txt = item
-        ret += "{}\n".format(txt)
-        
-    if not bool(ret):
-        return None
-        
-    return ret
-      
-def _playbook_from_dict__directive(directive_name, params):      
-    directive_ndx = directive_index(directive_name)
-    #directive_filepath = directive_filepath(directive_name)
-    directive_path = directive_filepath(directive_name)
-    print "directive path: {}".format(directive_path)
-    try:
-                        
-        with open(directive_path, "r") as fh:
-            dict_yaml_text = None
-            if params:
-                #print "params!: {}".format(params)
-                initial_template_text = fh.read()
-                #print "init temp txt: {}".format(initial_template_text)
-                dict_yaml_text = Template(initial_template_text).render(params)
-                #print "cp -after"
-            else:
-                dict_yaml_text = Template(fh.read()).render()
-
-            yaml_struct = yaml.load(dict_yaml_text)
-            if type(yaml_struct) is list and len(yaml_struct) == 1:
-                yaml_struct = yaml_struct[0]
-                
-            if 'directives' in yaml_struct.keys() or \
-                'files' in yaml_struct.keys():
-                #print "calling with yaml struct"
-                _, directive_text =  _playbook_from_dict(directives=yaml_struct, parameters=params)
-                return [(directive_ndx, "{}\n".format(directive_text))]
-            else:
-                return [(directive_ndx, "{}\n".format(dict_yaml_text))]
-            #return (directive_index, template_text)
-    except TypeError:
-        raise DirectiveFileDoesNotExist(directive_name)
-    except UnknownDirectiveEncountered:
-        print "encountered error with {}".format(directive_path)
-        raise
-    except jinja2.exceptions.TemplateSyntaxError:
-        #print "ERR: Template syntax error in {}".format(directive_filepath)
-        raise        
-    
-def _playbook_from_dict__files(files_list, params):
-    
-    #print "params: {}".format(params)
-    
-    assert(bool(files_list))
-    
-    tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
-    
-    files = {}
-    for f in files_list:
-        
-        txt = '    - copy: src={} dest={}'.format(f['source'], f['destination'])
-        if 'mode' in f:
-            txt += ' mode={}'.format(str(f['mode']))
-        if 'owner' in f:
-            txt += ' owner={}'.format(str(f['owner']))
-        if 'group' in f:
-            txt += ' group={}'.format(str(f['group']))
-        txt += '\n'
-        
-        order = '0'
-        try:
-            order = f['order']
-        except KeyError:
-            pass
-        
-        order_as_str = str(order)
-        
-        try:
-            files[order_as_str] += txt
-        except KeyError:
-            files[order_as_str] = "{}{}".format(tasks_header, txt)
-        
-    ret = []
-    for order_as_str, txt in files.iteritems():
-        ret.append((int(order_as_str), txt))
-        
-    return ret            
-      
-def _playbook_from_dict(**kwargs):
-    
-    try:
-        params = kwargs['parameters']
-    except KeyError:
-        params = {}    
-    
-    try:
-        directives_dict = kwargs['directives']
-        #print "directives({}), parameters({})".format(kwargs['directives'], params)
-        
-        try:
-            params = _merge_args(params, directives_dict['parameters'])
-        except KeyError:
-            pass
-        
-        try:
-            return _playbook_from_list(directives=directives_dict['directives'],
-                                       parameters=params)
-        except KeyError:
-            
-            try:
-                directive_name = directives_dict['directive']
-                print "directive name: {}".format(directive_name)
-                
-                if 'run_selectors' in directives_dict and \
-                   not _run_selector_affirmative(directives_dict['run_selectors']):
-                    raise DirectiveOmittedByRunSelector()
-                
-                return _playbook_from_dict__directive(directive_name, params)
-            except KeyError:
-                try:
-                    print "FILES!!!"
-                    files_list = directives_dict['files']
-                    print "files_list: {}".format(str(files_list))
-                    return _playbook_from_dict__files(files_list, params)
-                except KeyError:
-                    raise UnknownDirectiveEncountered()
-           
-    except KeyError:
-        raise RequiredParameterDirectivesNotProvided()
-
-        
-def run_ansible_playbook(**kwargs):
-    
-    
-    environ = _merge_args(os.environ,
-                          { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
-                            '/usr/local/sbin' })
-    
-    #environ = { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
-                        #'/usr/local/sbin' }
-    
-    # so all refs to files can start with 'files/'
-    os.chdir(temp_exec_dirpath())
-    
-    subprocess.call(["ansible-playbook","-vvvv",
-                     '-i', kwargs['hosts_filepath'],
-                     kwargs['playbook_filepath']], env=environ)
-
-def provision_machine(opts):
-    run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(opts),
-                         hosts_filepath=ansible_hostsfile_filepath(opts))
-
-_machine_conf = None
-def machine_config(opts):
-    global _machine_conf
-    try:
-        if _machine_conf is None:
-            machine_name = opts["machine"]
-            directive_file_stack_push(machine_name)
-            machine_config_filepath = os.path.join(machines_dirpath(), "{}.meta".format(machine_name))
-            #print "INFO: loading machine config for: {}, at {}".format(machine_name, machine_config_filepath)
-            with open (machine_config_filepath, "r") as machine_def_fh: 
-                rendered_machine_def_str = Template(machine_def_fh.read()).render(**os.environ)
-                
-                rendered_machine_def_str = _filter_machine_def(rendered_machine_def_str, opts)
-                #print "rendered_machine_def_str: {}".format(rendered_machine_def_str)
-                _machine_conf = yaml.load(rendered_machine_def_str)
-                
-                
-    except IOError:
-        print "\nERR: machine config not found at: {}, machine_config will be None\n".format(machine_config_filepath)
-    return _machine_conf
-    
-def _filter_machine_def(raw, opts):
-    machine_conf = yaml.load(raw)
-    
-    hosts_list = machine_conf['hosts']
-    #print "hosts_list: {}".format(str(hosts_list))
-    new_hosts_list = []
-    for host in hosts_list:
-        #print "host: {}".format(str(host))
-        if 'run_selectors' in host and not _run_selector_affirmative(host['run_selectors']):
-            continue
-        new_hosts_list.append(host)
-    machine_conf['hosts'] = new_hosts_list    
-    #print "pre-dump"
-    as_string = yaml.dump(machine_conf)    
-    #print "as_string: {}".format(as_string)
-    return as_string
-
-def machine_name(opts):
-    return opts["machine"]
-
-def ansible_hostsfile_filepath(opts):
-    try:
-        output_filepath = opts["hosts_output_file"]
-        assert(output_filepath is not None)
-        return output_filepath
-    except (AssertionError, KeyError):
-        return os.path.join(temp_exec_dirpath(),
-                            "provision_{}.hosts".format(machine_name(opts)))
-
-def ansible_playbook_filepath(opts):
-    try:
-        output_filepath = opts["playbook_output_file"]
-        assert(output_filepath is not None)
-        return output_filepath
-    except (AssertionError, KeyError):
-        return os.path.join(temp_exec_dirpath(),
-                            "provision_{}.playbook".format(machine_name(opts)))
-
-def write_ansible_hosts(opts):
-    mconf = None
-    try:
-        mconf = machine_config(opts)
-        hostrecs = mconf['hosts']
-        
-        hosts_filepath = ansible_hostsfile_filepath(opts)
-        print "writing to: {}".format(hosts_filepath)
-        with open(hosts_filepath, "w") as fh:
-            fh.write("[all]\n")
-            
-            for hostrec in hostrecs:
-                fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
-            fh.write("\n")
-    except TypeError:
-        #print "machine_config: {}".format(str(mconf))
-        if mconf is None:
-            print "ERR: No machine config, not writing ansible hosts file"
-            return
-        else:
-            raise
-        
-
-_directive_name_stack = []
-def directive_file_stack_push(directive_name):
-    _directive_name_stack.append(directive_name)
-    
-def directive_file_stack_pop():
-    _directive_name_stack.pop()
-    
-def directive_file_stack_as_str():
-    return ">".join(_directive_name_stack)
-
-_run_selectors = None
-def set_run_selectors_list(rslist):
-    global _run_selectors
-    _run_selectors = rslist
-    
-def get_run_selectors_list():
-    global _run_selectors
-    return _run_selectors
-
-def _run_selector_include_affirmative(include_selectors):
-
-    if (type(include_selectors) is not list):
-        return _run_selector_exclude_affirmative([include_selectors])
-
-    try:
-        run_selectors = get_run_selectors_list()
-        #print('_run_selector_include_affirmative - include_selectors: {}'.format(str(include_selectors)))
-        #print('_run_selector_include_affirmative - run_selectors: {}'.format(str(run_selectors)))
-        
-        for sel in include_selectors:
-            if sel == 'ALL':
-                return True
-            if sel in run_selectors:
-                return True
-        return False
-    except TypeError:
-        return False
-
-def _run_selector_exclude_affirmative(exclude_selectors):
-    
-    if (type(exclude_selectors) is not list):
-        return _run_selector_exclude_affirmative([exclude_selectors])
-    
-    try:
-        run_selectors = get_run_selectors_list()
-        print('_run_selector_exclude_affirmative - exclude_selectors: {}'.format(str(exclude_selectors)))
-        print('_run_selector_exclude_affirmative - run_selectors: {}'.format(str(run_selectors)))
-        for sel in exclude_selectors:
-            if str(sel) == 'ALL':
-                return True
-            if str(sel) in run_selectors:
-                return True
-        return False
-    except TypeError:
-        return False
-
-
-def _run_selector_affirmative(selectors):
-    try:
-        assert(_run_selector_include_affirmative(selectors['include']))
-        return True
-    except (AssertionError, KeyError):
-        try:
-            assert(_run_selector_exclude_affirmative(selectors['exclude']))
-            return False
-        except (AssertionError, KeyError):
-            return True
-        
-
-def _filter_final_playbook_output(raw, opts):
-    #print "raw:\n{}".format(raw)
-    as_struct = yaml.load(raw)
-    
-    # filter hosts
-    #new_hosts_list = []
-    #hosts_list = as_struct['hosts']
-    #for host in hosts_list:
-        #try:
-            #assert('run_selectors' in host)
-            #if _run_selector_affirmative(host['run_selectors']):
-                #new_hosts_list.append(host)
-                #continue            
-        #except AssertionError:
-            #new_hosts_list.append(host)
-            #continue
-    
-    as_string = yaml.dump(as_struct)    
-    return as_string
-  
-def write_ansible_playbook(opts):
-    mconf = None
-    try:
-        mconf = machine_config(opts)
-        
-        try:
-            directives = mconf['directives']
-        except KeyError:
-            directives = {}
-            
-        try:
-            params = mconf['parameters']
-        except KeyError:
-            params = {}
-            
-        playbook_output_filepath = ansible_playbook_filepath(opts)
-        #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
-        try:
-            assert(bool(directives))
-            with open(ansible_playbook_filepath(opts), "w") as fh:
-                order, playbook_output = _playbook_from_list( directives=directives, parameters=params )
-                
-                playbook_output = _filter_final_playbook_output(playbook_output, opts)
-                
-                if bool(playbook_output):
-                    fh.write(playbook_output)
-                else:
-                    fh.write("# WARN: No directives found!\n")
-        except DirectiveFileDoesNotExist as e:
-            print "ERR: directive referenced for which no file was found: {}, stack: {}".format(str(e), directive_file_stack_as_str())
-        except AssertionError:
-            print "WARN: no directives defined!"
-            
-    except TypeError:
-        #print "machine_config: {}".format(str(mconf))
-        if mconf is None:
-            print "ERR: No machine config, not writing ansible playbook file"
-            return
-        else:
-            raise
         
 
 if __name__ == '__main__':
@@ -461,11 +38,11 @@ if __name__ == '__main__':
         prog='corrigible'
     )
     
-    progargs = ( ( "machine", "positional", "the name of the machine (or group) whose config will be parsed" ),
+    progargs = ( ( "system", "positional", "the name of the system (or group) whose config will be parsed" ),
                  ( "playbook-output-file", "full", "the playbook output file (for testing, use discouraged)"),
                  ( "hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
                  ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ),
-                 ( "selectors", "full", "a list of run selectors to be applied to include/exclude directives" ) )
+                 ( "selectors", "full", "a list of run selectors to be applied to include/exclude plans" ) )
     
     for arginfo in progargs:
         optname, opttype, opthelp = arginfo
@@ -497,5 +74,6 @@ if __name__ == '__main__':
     write_ansible_playbook(options)
     
     if not options["generate_files_only"]:
-        provision_machine(options)
+        run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
+                             hosts_filepath=ansible_hostsfile_filepath(options))
     
