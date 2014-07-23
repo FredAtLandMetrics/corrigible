@@ -19,6 +19,7 @@ import os
 from corrigible.lib.playbook import write_ansible_playbook
 #from corrigible.lib.system import system_config
 from corrigible.lib.hostsfile import write_ansible_hosts
+from corrigible.lib.selector import set_run_selectors_list
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
 PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
@@ -62,7 +63,7 @@ if __name__ == '__main__':
         elif type(options['selectors']) is str and bool(options['selectors']):
             selectors = [options['selectors']]
         #print "SETTING SELECTORS!!"
-        c(selectors)
+        set_run_selectors_list(selectors)
     except (KeyError, AttributeError, TypeError):
         pass
     
