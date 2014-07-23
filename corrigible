@@ -22,7 +22,6 @@ from corrigible.lib.hostsfile import write_ansible_hosts
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
 PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
-MAX_DIRECTIVE_ORDER = 9999999
 
 
 
