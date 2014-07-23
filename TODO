@@ -20,9 +20,4 @@ Specific TODO resulting from #1 above
 
 Big Picture
 ===========
-1) rename .directive.yml to .plan.yml
-2) refer 'plans' not directives in code
-3) rename .meta.yml to .system.yml
-4) refer to 'systems' and not 'machines'
-5) in the plan and system files, shorten to src and dst
-6) in the plan and system files, instead of directives/directive do plan/item
+1) in the plan and system files, shorten to src and dst
