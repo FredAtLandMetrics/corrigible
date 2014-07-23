@@ -2,47 +2,45 @@ Introduction
 ============
 
 **corrigible** builds on the capabilities of the fantastic automated configuration tool, [ansible](http://www.ansible.com/home), by adding:
-* ansible directive re-use
-* sysV-style directive ordering
+* ansible yaml re-use
+* sysV-style ordering of ansible snippets
 * simplified variable substitution
-* runlevels for full vs. partial playbook execution
+* run selectors for full vs. partial playbook execution
     
 From the ansible workflow, corrigible removes:
-* duplicated playbook directives
+* duplicated playbook snippets
 * hosts files
 
-It begins with a workspace, which defaults to */usr/local/etc/corrigible*.  In the workspace, should be three subdirectories: *files*, *directives*, and *machines*:
-* **files** - files to be copied to the provisioned machines.  subdirectories are ok.
-* **machines** - toplevel config files for hosts (or groups of hosts)
-* **directives** - playbook excerpts and *directive* files which allow for intelligent grouping of playbook excerpts
+It begins with a workspace, which defaults to */usr/local/etc/corrigible*.  In the workspace, should be three subdirectories: *files*, *plans*, and *systems*:
+* **files** - files to be copied to the provisioned systems.  subdirectories are ok.
+* **systems** - toplevel config files for hosts (or groups of hosts)
+* **plans** - playbook excerpts and *plan* files which allow for intelligent grouping of playbook excerpts
 
-The *machines* and *directives* directories are where all the magic happens for corrigible.  The *machines* directory contains holds *meta* files which tell corrigible how to start the provisioning process for a given host (or group of hosts).
+The *systems* and *plans* directories are where all the magic happens for corrigible.  The *systems* directory contains holds *.system* files which tell corrigible how to start the provisioning process for a given host (or group of hosts).
 
-Once the machine file and various directive files are in place, provisioning is as simple as:
+Once the system file and various plan files are in place, provisioning is as simple as:
 ```shell
 corrigible somehost
 ```
 
 Why?
 ====
-I really like ansible, but it's awkward.  I feel like it's made to be simple and, as soon as I try to do something a bit more complicated (but not THAT much), I end up copying bits of ansible playbooks around (or forgetting to, which is arguably worse).
+I really like ansible, but it's awkward at scale.  I feel like it's made to be simple and, as soon as I try to do something a bit more complicated (but not THAT much), I end up copying bits of ansible playbooks around (or forgetting to, which is arguably worse).
 
-I really don't like doing things more than once.  But I maintain a stable of playbooks and I'm copying ssh keys around from one to the other and part of my troubleshooting routine for them is to look for places where I fixed an issue in one playbook but didn't insert it into the three others that could also have used the fix.
-
-After a great discussion with a coworker about our particular set of requirements, I scratched out a design for corrigible to meet them without sacrificing ansible's simplicity (which we both agreed was priority #1).
+After a great discussion with a coworker about our particular set of requirements, I scratched out a design for corrigible to meet our needs without sacrificing ansible's simplicity (which we both agreed was priority #1).
 
 For us, it will help scale ansible's utility without all the complexity.
 
 Before You Begin
 ================
 
-As mentioned above, corrigible expects three directories to exist: one for files, one for machine config files and one for directive files.
+As mentioned above, corrigible expects three directories to exist: one for files, one for system config files and one for plan files.
 
-These directories default to */usr/local/etc/corrigible[files|machines|directives]* but can be customized via the following environment variables:
-* **CORRIGIBLE_PATH** - define this to configure a directory which will contain *files*, *machines*, and *directives* subdirectories
+These directories default to */usr/local/etc/corrigible[files|systems|plans]* but can be customized via the following environment variables:
+* **CORRIGIBLE_PATH** - define this to configure a directory which will contain *files*, *systems*, and *plans* subdirectories
 * **CORRIGIBLE_FILES** - define this to configure a directory which will contain files for corrigible
-* **CORRIGIBLE_MACHINES** - define this to configure a directory which will contain machine configuration files for corrigible
-* **CORRIGIBLE_DIRECTIVES** - define this to configure a directory which will contain directive files for corrigible
+* **CORRIGIBLE_SYSTEMS** - define this to configure a directory which will contain system configuration files for corrigible
+* **CORRIGIBLE_PLANS** - define this to configure a directory which will contain plan files for corrigible
 
 Overview of the Corrigible directories
 ======================================
@@ -52,42 +50,41 @@ The Files Directory
 
 Really just a dumping ground for files.  Create all the subdirectories you want.  Follow your own naming configurations.  The sky is the limit.  This is the wild west of file dumping grounds.
 
-The Machines Directory and the Files That Occupy It
+The Systems Directory and the Files That Occupy It
 ---------------------------------------------------
 
-The *machines directory* is where machine configuration files go.  Each machine configuration file will contain the following sections:
+The *systems directory* is where system configuration files go.  Each system configuration file will contain the following sections:
 * hosts
-* directives
+* plans
 * parameters _(optional)_
-* files _(optional)_
 
 *For a more detailed description of different section types, see the **Section Types** section below.
 
-The Directives Directory and Directives Files
+The Plans Directory and Plan Files
 ---------------------------------------------
 
-The *directives directory* is where directives files are located. There are two types of directives files, **ansible excerpt** files and **directive container** files. 
+The *plans directory* is where plan files are located. There are two types of plan files, **ansible excerpt** files and **plan container** files. 
 
 **Ansible excerpt files** are literally that, excerpts of ansible playbooks.  They can reference variables defined in *parameters* sections (see **Section Types** below).
 
-**Directive container files** look like machine configuration files, except that they may not contain hosts sections (or, rather, if they do, then the hosts section will be ignored).  Additionally, there is a naming convention for these files that has implications as to the order in which the directives are processed.
+**Plan container files** look like system configuration files, except that they do not contain hosts sections (or, rather, if they do, then the hosts section will be ignored).  Additionally, there is a naming convention for these files that has implications as to the order in which the plans are processed.
 
-Machine config files and directive container files explained
+System config files and plan container files explained
 ============================================================
 
-Machines config files and directive container files are very similar in format, but they vary a bit in scope.  Machine config files are the starting point for corrigible, such that when corrigible is run with this command:
+Systems config files and plan container files are very similar in format, but they vary a bit in scope.  System config files are the starting point for corrigible, such that when corrigible is run with this command:
 ```
-corrigible somemachine
+corrigible somesystem
 ```
-the very first thing corrigible will do is go look in the machines dir for a file named *somemachine.meta*.
+the very first thing corrigible will do is go look in the systems dir for a file named *somemachine.system*.
 
-Directive container files, on the other hand, are included by machine config files (and other directory container files).
+Plan container files, on the other hand, are included by system config files (and other directory container files).
 
 
-Machine config files
+System config files
 --------------------
 
-This is a machine configuration file that is based on one used by the test suite.
+This is a system configuration file that is based on one used by the test suite.
 
 ```YAML
 hosts:
@@ -113,16 +110,16 @@ parameters:
     deployuser: deploy
     sudo: yes
     
-directives:
-    - directive: apt_upgrade
+plans:
+    - plan: apt_upgrade
       run_selectors:
           include:
             - ALL
           exclude:
             - update_dnsservers      
-    - directive: install_cron
-    - directive: directives_test
-    - directive: add_deploy_user
+    - plan: install_cron
+    - plan: plans_test
+    - plan: add_deploy_user
     - files:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt
@@ -132,7 +129,7 @@ directives:
 
 ###The hosts section
 
-The hosts section is the main difference between the two file types.  Machine config files have them and directive container files do not.  Here's the hosts section from the example above:
+The hosts section is the main difference between the two file types.  System config files have them and plan container files do not.  Here's the hosts section from the example above:
     
 ```YAML
 hosts:
@@ -153,66 +150,66 @@ hosts:
       ##     - ALL
 ```    
 
-It's pretty straightforward, really. It shows two hosts with their names and ip addresses.  This lets corrigible know which network-accessible machines are to be targetted by the directives.
+It's pretty straightforward, really. It shows two hosts with their names and ip addresses.  This lets corrigible know which network-accessible systems are to be targetted by the plans.
 
-The hosts section also illustrates one of the more interesting features of corrigible, *run_selectors*. Run selectors make it possible to selectively include or exclude certain directives depending on the run_selectors provided on the corrigible command-line.
+The hosts section also illustrates one of the more interesting features of corrigible, *run_selectors*. Run selectors make it possible to selectively include or exclude certain plans depending on the run_selectors provided on the corrigible command-line.
 
-###The directives section
+###The plans section
 
-The directives section tells corrigible what it will be doing to the hosts listed in the hosts section.  It can contain any number of references to directive container files, ansible workbook extracts, and file transfer listings. It's not immediately obvious, but the directives section in the example above contains all three types of references.
+The plans section tells corrigible what it will be doing to the hosts listed in the hosts section.  It can contain any number of references to plan container files, ansible workbook extracts, and file transfer listings. It's not immediately obvious, but the plans section in the example above contains all three types of references.
 
 ```YAML
-directives:
-    - directive: apt_upgrade
+plans:
+    - plan: apt_upgrade
       run_selectors:
           include:
             - ALL
           exclude:
             - update_dnsservers      
-    - directive: install_cron
-    - directive: directives_test
-    - directive: add_deploy_user
+    - plan: install_cron
+    - plan: plans_test
+    - plan: add_deploy_user
     - files:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt
           mode: 0444
 ```
-The lines that begin with a *- directive:* can refer to *either* a directive container file or an ansible excerpt file. Like the host records above, they can contain run selectors and can be similarly included/excluded.
+The lines that begin with a *- plan:* can refer to *either* a plan container file or an ansible excerpt file. Like the host records above, they can contain run selectors and can be similarly included/excluded.
 
-As it happens, all of the directives in this section are refer to ansible playbook excerpts except for the one with the 'directives-test' name.  Note that there's no way to tell which is which without looking at the files in the directives directory.
+As it happens, all of the plans in this section are refer to ansible playbook excerpts except for the one with the 'plans-test' name.  Note that there's no way to tell which is which without looking at the files in the plans directory.
 ```
-fred@chimera:~/Projects/corrigible$ ls test/resources/directives
+fred@chimera:~/Projects/corrigible$ ls test/resources/plans
 04_add_deploy_user.ansible.yml
 11_install_cron.ansible.yml
 19_apt_upgrade.ansible.yml
 35_add_misc_users_grp_b.ansible.yml
 38_add_misc_users_grp_c.ansible.yml
-57_directives_test.directive.yml
+57_plans_test.plan.yml
 75_add_misc_users_grp_a.ansible.yml
 81_apt_add_packages.ansible.yml
 ```
 
-By looking at the filename, it's easy to tell whether a given file is an ansible playbook excerpt or a directive container file.
+By looking at the filename, it's easy to tell whether a given file is an ansible playbook excerpt or a plan container file.
 
-Note, too, that each file is prefixed by an integer. This guides corrigible when it determines the order in which certain directives are to be executed. 
+Note, too, that each file is prefixed by an integer. This guides corrigible when it determines the order in which certain plans are to be executed. 
 
-A look at the directive container file will show how similar it is to the machine config file:
+A look at the plan container file will show how similar it is to the system config file:
 ```YAML
-# this is 57_directives_test.directive.yml
+# this is 57_plans_test.plan.yml
 
 parameters:
     apt_packages_to_install: 'php5,imagemagick'
         
-directives:
-    - directive: apt_add_packages
-    - directive: add_misc_users_grp_c
+plans:
+    - plan: apt_add_packages
+    - plan: add_misc_users_grp_c
     - files:
         - source: some/path/testfile.txt
           destination: /tmp/testfile.txt
           mode: 0755
           order: 39
 ```
-The parameters section is discussed in the next section, but the directives section is the same as that of the machine config file and it behaves the same way.  It is important to note that the directives in a directive container file are executed in sequence.  *This means that it is possible for a directive with a 100 prefix can be executed before a directive with a 50 prefix if it is referenced in a directory container file with a prefix of 20.*
+The parameters section is discussed in the next section, but the plans section is the same as that of the system config file and it behaves the same way.  It is important to note that the plans in a plan container file are executed in sequence.  *This means that it is possible for a plan with a 100 prefix can be executed before a plan with a 50 prefix if it is referenced in a directory container file with a prefix of 20.*
 
 To segue into the parameters section, we'll look at the contents of a ansible playbook excerpt:
 ```YAML
@@ -226,25 +223,25 @@ To segue into the parameters section, we'll look at the contents of a ansible pl
 No surprises here. Ansible playbooks already have variable substitution. Corrigible variable substitution works the same way only, instead of being specified on the command line, corrigible reads assigns values to the variables from the parameters section.
     
 ###The parameters section
-The parameters section is how corrigible deals with variable substitution. The example machine config included a parameters section that looked like:
+The parameters section is how corrigible deals with variable substitution. The example system config included a parameters section that looked like:
 ```YAML
 parameters:
     sudouser: ubuntu
     deployuser: deploy
     sudo: yes
 ```
-and the directive container file had parameters like:
+and the plan container file had parameters like:
 ```YAML
 parameters:
     apt_packages_to_install: 'php5,imagemagick'
 ```
-The *81_apt_add_packages.ansible.yml* file, when it is included via the *57_directives_test.directive.yml*, will have the following variables available to it:
+The *81_apt_add_packages.ansible.yml* file, when it is included via the *57_plans_test.plan.yml*, will have the following variables available to it:
 * sudouser
 * deployuser
 * sudo
 * apt_packages_to_install
 
-Note that *parameters in higher-level directive container files and in machine config files will supercede those specified in lower-level directive container files.*  Using this mechanism, it's possible for multiple machines to use the same directive containers and yet retain the ability to customize directive behavior at the machine config file level.
+Note that *parameters in higher-level plan container files and in system config files will supercede those specified in lower-level plan container files.*  Using this mechanism, it's possible for multiple systems to use the same plan containers and yet retain the ability to customize plan behavior at the system config file level.
 
 
 Project Status
