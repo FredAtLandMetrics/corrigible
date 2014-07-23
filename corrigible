@@ -62,7 +62,7 @@ if __name__ == '__main__':
         elif type(options['selectors']) is str and bool(options['selectors']):
             selectors = [options['selectors']]
         #print "SETTING SELECTORS!!"
-        set_run_selectors_list(selectors)
+        c(selectors)
     except (KeyError, AttributeError, TypeError):
         pass
     

@@ -9,6 +9,11 @@ def run_selector_affirmative(selectors):
         except (AssertionError, KeyError):
             return True
 
+_run_selectors = None
+def set_run_selectors_list(rslist):
+    global _run_selectors
+    _run_selectors = rslist
+
 def get_run_selectors_list():
     global _run_selectors
     return _run_selectors

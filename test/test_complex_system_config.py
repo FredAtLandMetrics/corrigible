@@ -4,54 +4,54 @@ import unittest
 import os
 import re
 
-from corrigible.lib.provision_files import directive_index, directive_filepath
+from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
 
 script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
-machine_config_dirpath = os.path.join(script_dirpath,'resources','machines')
-directives_config_dirpath = os.path.join(script_dirpath,'resources','directives')
+system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
+plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
 corrigible_exec_filepath = os.path.join(script_dirpath, '..', 'corrigible')
 
-os.environ['CORRIGIBLE_MACHINES'] = machine_config_dirpath
-os.environ['CORRIGIBLE_DIRECTIVES'] = directives_config_dirpath
+os.environ['CORRIGIBLE_SYSTEMS'] = system_config_dirpath
+os.environ['CORRIGIBLE_PLANS'] = plans_config_dirpath
 os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 
-PLAYBOOK_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-output.yml"
-HOSTS_FILEPATH__MACHINECONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
+PLAYBOOK_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-output.yml"
+HOSTS_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
 
 class TestMachineConfig(CorrigibleTest):
 
     def setUp(self):
-        self.output_playbook_filepath = PLAYBOOK_FILEPATH__MACHINECONF_TEST
-        self.output_hostsfile_filepath = HOSTS_FILEPATH__MACHINECONF_TEST
+        self.output_playbook_filepath = PLAYBOOK_FILEPATH__SYSTEMCONF_TEST
+        self.output_hostsfile_filepath = HOSTS_FILEPATH__SYSTEMCONF_TEST
         self.corrigible_exec_filepath = corrigible_exec_filepath
         
-    def regen_test_complex_directives(self, **kwargs):
-        """re-run corrigible for the complex directive test config"""
-        self.rerun_corrigible(machine_config="test_complex_directives",
+    def regen_test_complex_plans(self, **kwargs):
+        """re-run corrigible for the complex plan test config"""
+        self.rerun_corrigible(system_config="test_complex_plans",
                               generate_files_only=True)
         
         
         
-    def test_complex_directive_ordering(self):
-        """after re-running corrigible on the complex directives test machine config, test that the directives are ordered as per the index indicated is each's filename and as per the directive file containment"""
-        self.regen_test_complex_directives()
+    def test_complex_plan_ordering(self):
+        """after re-running corrigible on the complex plans test system config, test that the plans are ordered as per the index indicated is each's filename and as per the plan file containment"""
+        self.regen_test_complex_plans()
         self.assertTrue(os.path.isfile(self.output_playbook_filepath))
         self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         
         s = self.playbook_as_struct()
         tasksrec = {}
         
-        ## listed directives:
-        #    directives_test (57)
+        ## listed plans:
+        #    plans_test (57)
         #    apt_upgrade (19)
         #    install_cron (11)
         #    add_misc_users_grp_b (35)
         #    add_misc_users_grp_a (75)
         #    add_deploy_user (04)
         
-        ## and directives_test contains these directives:
+        ## and plans_test contains these plans:
         #    apt_add_packages (81)
         #    add_misc_users_grp_c (38)
         
@@ -64,7 +64,7 @@ class TestMachineConfig(CorrigibleTest):
         #    apt_add_packages (81)
         #    add_misc_users_grp_a (75)
         
-        # ABOVE CHANGED WITH ADDITION OF FILES DIRECTIVE!!!
+        # ABOVE CHANGED WITH ADDITION OF FILES PLAN!!!
         
         #    add_deploy_user (04)
         tasksrec['copy_toplevel_text_file'] = s[0]['tasks'][0]
@@ -91,7 +91,7 @@ class TestMachineConfig(CorrigibleTest):
         self.assertTrue(re.search(r'toplevel\.txt',tasksrec['copy_toplevel_text_file']['copy']))
         self.assertTrue(tasksrec['add_misc_users_grp_c']['name'].strip() == "add sara")
 
-        # file copy from 57_directives_test.directive.yml
+        # file copy from 57_plans_test.plan.yml
         tasksrec['copy_some_file'] = s[5]['tasks'][0]
         self.assertTrue('copy' in tasksrec['copy_some_file'])
         self.assertTrue(re.search(r'testfile\.txt',tasksrec['copy_some_file']['copy']))

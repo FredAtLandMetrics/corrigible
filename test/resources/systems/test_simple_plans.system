@@ -9,9 +9,9 @@ parameters:
     sudo: yes
     
 plans:
-    - item: apt_upgrade
-    - item: install_cron
-    - item: add_deploy_user
+    - plan: apt_upgrade
+    - plan: install_cron
+    - plan: add_deploy_user
     - files:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt

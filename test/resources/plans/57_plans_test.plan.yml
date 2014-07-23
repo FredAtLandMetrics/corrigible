@@ -1,9 +1,9 @@
 parameters:
     apt_packages_to_install: 'php5,imagemagick'
         
-directives:
-    - directive: apt_add_packages
-    - directive: add_misc_users_grp_c
+plans:
+    - plan: apt_add_packages
+    - plan: add_misc_users_grp_c
     - files:
         - source: some/path/testfile.txt
           destination: /tmp/testfile.txt

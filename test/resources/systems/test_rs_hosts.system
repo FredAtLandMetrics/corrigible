@@ -26,12 +26,12 @@ hosts:
         include:
           - testrs1
 
-directives:
-    - directive: apt_upgrade
+plans:
+    - plan: apt_upgrade
       run_selectors:
           exclude:
             - update_dnsservers      
-    - directive: install_cron
+    - plan: install_cron
       run_selectors:
           exclude:
             - ALL

@@ -21,16 +21,16 @@ parameters:
     deployuser: deploy
     sudo: yes
     
-directives:
-    - directive: apt_upgrade
+plans:
+    - plan: apt_upgrade
       run_selectors:
           include:
             - ALL
           exclude:
             - update_dnsservers      
-    - directive: install_cron
-    - directive: directives_test
-    - directive: add_deploy_user
+    - plan: install_cron
+    - plan: plans_test
+    - plan: add_deploy_user
     - files:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt

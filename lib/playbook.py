@@ -1,6 +1,7 @@
 import jinja2
 import yaml
 import heapq
+import copy
 
 from jinja2 import Template
 
@@ -10,6 +11,7 @@ from corrigible.lib.exceptions import PlanFileDoesNotExist, \
                                       UnknownPlanEncountered
 from corrigible.lib.planfilestack import plan_file_stack_push, plan_file_stack_pop
 from corrigible.lib.plan import plan_index, plan_filepath
+from corrigible.lib.selector import run_selector_affirmative
 jinja2.Environment(autoescape=False)
 
 MAX_DIRECTIVE_ORDER = 9999999
@@ -98,8 +100,8 @@ def _playbook_from_list(**kwargs):
         for plans_dict in kwargs['plans']:
             
             dopop = False
-            if 'item' in plans_dict:
-                plan_file_stack_push(plans_dict['item'])
+            if 'plan' in plans_dict:
+                plan_file_stack_push(plans_dict['plan'])
                 dopop = True
             elif 'files' in plans_dict:
                 plan_file_stack_push('files')
@@ -138,8 +140,8 @@ def _text_from_tuple_list(*args):
             ordernum, playbook_text = playbook_text_tuple
             heapq.heappush(retlist, (ordernum, playbook_text))
     ret = ""
-    for item in sorted(retlist):
-        order, txt = item
+    for plan in sorted(retlist):
+        order, txt = plan
         ret += "{}\n".format(txt)
         
     if not bool(ret):
@@ -247,11 +249,11 @@ def _playbook_from_dict(**kwargs):
         except KeyError:
             
             try:
-                plan_name = plans_dict['item']
+                plan_name = plans_dict['plan']
                 print "plan name: {}".format(plan_name)
                 
                 if 'run_selectors' in plans_dict and \
-                   not _run_selector_affirmative(plans_dict['run_selectors']):
+                   not run_selector_affirmative(plans_dict['run_selectors']):
                     raise PlanOmittedByRunSelector()
                 
                 return _playbook_from_dict__plan(plan_name, params)
