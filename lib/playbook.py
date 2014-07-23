@@ -153,7 +153,7 @@ def _playbook_from_dict__plan(plan_name, params):
     plan_ndx = plan_index(plan_name)
     #plan_filepath = plan_filepath(plan_name)
     plan_path = plan_filepath(plan_name)
-    print "plan path: {}".format(plan_path)
+    #print "plan path: {}".format(plan_path)
     try:
                         
         with open(plan_path, "r") as fh:
@@ -250,7 +250,7 @@ def _playbook_from_dict(**kwargs):
             
             try:
                 plan_name = plans_dict['plan']
-                print "plan name: {}".format(plan_name)
+                #print "plan name: {}".format(plan_name)
                 
                 if 'run_selectors' in plans_dict and \
                    not run_selector_affirmative(plans_dict['run_selectors']):
@@ -259,9 +259,8 @@ def _playbook_from_dict(**kwargs):
                 return _playbook_from_dict__plan(plan_name, params)
             except KeyError:
                 try:
-                    print "FILES!!!"
                     files_list = plans_dict['files']
-                    print "files_list: {}".format(str(files_list))
+                    #print "files_list: {}".format(str(files_list))
                     return _playbook_from_dict__files(files_list, params)
                 except KeyError:
                     raise UnknownPlanEncountered()

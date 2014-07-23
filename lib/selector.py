@@ -44,8 +44,8 @@ def _run_selector_exclude_affirmative(exclude_selectors):
     
     try:
         run_selectors = get_run_selectors_list()
-        print('_run_selector_exclude_affirmative - exclude_selectors: {}'.format(str(exclude_selectors)))
-        print('_run_selector_exclude_affirmative - run_selectors: {}'.format(str(run_selectors)))
+        #print('_run_selector_exclude_affirmative - exclude_selectors: {}'.format(str(exclude_selectors)))
+        #print('_run_selector_exclude_affirmative - run_selectors: {}'.format(str(run_selectors)))
         for sel in exclude_selectors:
             if str(sel) == 'ALL':
                 return True

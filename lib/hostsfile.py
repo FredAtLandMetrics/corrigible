@@ -7,7 +7,7 @@ def write_ansible_hosts(opts):
         hostrecs = mconf['hosts']
         
         hosts_filepath = ansible_hostsfile_filepath(opts)
-        print "writing to: {}".format(hosts_filepath)
+        #print "writing to: {}".format(hosts_filepath)
         with open(hosts_filepath, "w") as fh:
             fh.write("[all]\n")
             
