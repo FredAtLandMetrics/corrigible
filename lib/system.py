@@ -1,3 +1,14 @@
+import os
+import yaml
+
+from jinja2 import Template
+
+from corrigible.lib.planfilestack import plan_file_stack_push
+from corrigible.lib.dirpaths import systems_dirpath
+from corrigible.lib.selector import run_selector_affirmative
+
+SYSTEM_FILE_SUFFIX = "system"
+
 _system_conf = None
 def system_config(opts):
     global _system_conf
@@ -5,7 +16,7 @@ def system_config(opts):
         if _system_conf is None:
             system_name = opts["system"]
             plan_file_stack_push(system_name)
-            system_config_filepath = os.path.join(systems_dirpath(), "{}.meta".format(system_name))
+            system_config_filepath = os.path.join(systems_dirpath(), "{}.{}".format(system_name, SYSTEM_FILE_SUFFIX))
             #print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath)
             with open (system_config_filepath, "r") as system_def_fh: 
                 rendered_system_def_str = Template(system_def_fh.read()).render(**os.environ)
@@ -26,7 +37,7 @@ def _filter_system_def(raw, opts):
     new_hosts_list = []
     for host in hosts_list:
         #print "host: {}".format(str(host))
-        if 'run_selectors' in host and not _run_selector_affirmative(host['run_selectors']):
+        if 'run_selectors' in host and not run_selector_affirmative(host['run_selectors']):
             continue
         new_hosts_list.append(host)
     system_conf['hosts'] = new_hosts_list    

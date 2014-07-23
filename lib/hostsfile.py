@@ -1,3 +1,5 @@
+from corrigible.lib.system import system_config
+
 def write_ansible_hosts(opts):
     mconf = None
     try:

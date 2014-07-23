@@ -1,3 +1,19 @@
+import jinja2
+import yaml
+import heapq
+
+from jinja2 import Template
+
+from corrigible.lib.system import system_config
+from corrigible.lib.exceptions import PlanFileDoesNotExist, \
+                                      PlanOmittedByRunSelector, \
+                                      UnknownPlanEncountered
+from corrigible.lib.planfilestack import plan_file_stack_push, plan_file_stack_pop
+from corrigible.lib.plan import plan_index, plan_filepath
+jinja2.Environment(autoescape=False)
+
+MAX_DIRECTIVE_ORDER = 9999999
+
 def ansible_playbook_filepath(opts):
     try:
         output_filepath = opts["playbook_output_file"]
@@ -82,8 +98,8 @@ def _playbook_from_list(**kwargs):
         for plans_dict in kwargs['plans']:
             
             dopop = False
-            if 'plan' in plans_dict:
-                plan_file_stack_push(plans_dict['plan'])
+            if 'item' in plans_dict:
+                plan_file_stack_push(plans_dict['item'])
                 dopop = True
             elif 'files' in plans_dict:
                 plan_file_stack_push('files')
@@ -231,7 +247,7 @@ def _playbook_from_dict(**kwargs):
         except KeyError:
             
             try:
-                plan_name = plans_dict['plan']
+                plan_name = plans_dict['item']
                 print "plan name: {}".format(plan_name)
                 
                 if 'run_selectors' in plans_dict and \

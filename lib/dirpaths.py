@@ -11,10 +11,10 @@ def envvar_cap_var(environment_variable_name, **kwargs):
             return None
     
 def systems_dirpath():
-    return envvar_cap_var('CORRIGIBLE_MACHINES',default='{}/systems'.format(corrigible_path()))
+    return envvar_cap_var('CORRIGIBLE_SYSTEMS',default='{}/systems'.format(corrigible_path()))
 
 def plans_dirpath():
-    return envvar_cap_var('CORRIGIBLE_DIRECTIVES',default='{}/plans'.format(corrigible_path()))
+    return envvar_cap_var('CORRIGIBLE_PLANS',default='{}/plans'.format(corrigible_path()))
 
 def files_dirpath():
     return envvar_cap_var('CORRIGIBLE_FILES',default='{}/files'.format(corrigible_path()))

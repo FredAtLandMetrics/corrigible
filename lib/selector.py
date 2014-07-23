@@ -1,3 +1,14 @@
+def run_selector_affirmative(selectors):
+    try:
+        assert(_run_selector_include_affirmative(selectors['include']))
+        return True
+    except (AssertionError, KeyError):
+        try:
+            assert(_run_selector_exclude_affirmative(selectors['exclude']))
+            return False
+        except (AssertionError, KeyError):
+            return True
+
 def get_run_selectors_list():
     global _run_selectors
     return _run_selectors
@@ -40,13 +51,3 @@ def _run_selector_exclude_affirmative(exclude_selectors):
         return False
 
 
-def run_selector_affirmative(selectors):
-    try:
-        assert(_run_selector_include_affirmative(selectors['include']))
-        return True
-    except (AssertionError, KeyError):
-        try:
-            assert(_run_selector_exclude_affirmative(selectors['exclude']))
-            return False
-        except (AssertionError, KeyError):
-            return True

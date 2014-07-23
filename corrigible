@@ -16,15 +16,14 @@ import os
                                       #PlanFileDoesNotExist, \
                                       #UnknownPlanEncountered, \
                                       #PlanOmittedByRunSelector
-#from corrigible.lib.playbook import write_ansible_playbook
+from corrigible.lib.playbook import write_ansible_playbook
 #from corrigible.lib.system import system_config
-
+from corrigible.lib.hostsfile import write_ansible_hosts
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
 PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
 MAX_DIRECTIVE_ORDER = 9999999
 
-jinja2.Environment(autoescape=False)
 
 
         

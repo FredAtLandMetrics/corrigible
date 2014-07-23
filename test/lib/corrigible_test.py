@@ -9,14 +9,14 @@ from subprocess import call
 class CorrigibleTest(unittest.TestCase):
     
     def rerun_corrigible(self, **kwargs):
-        """re-run corrigible for a given machine config file"""
+        """re-run corrigible for a given system config file"""
         # remove the test output file if it exists
         if os.path.isfile(self.output_playbook_filepath):
             os.remove(self.output_playbook_filepath)
         if os.path.isfile(self.output_hostsfile_filepath):
             os.remove(self.output_hostsfile_filepath)
             
-        call_list =  [self.corrigible_exec_filepath, kwargs['machine_config']]
+        call_list =  [self.corrigible_exec_filepath, kwargs['system_config']]
         try:
             assert(bool(kwargs['generate_files_only']))
             call_list.append("--generate-files-only")

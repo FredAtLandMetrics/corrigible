@@ -8,10 +8,10 @@ parameters:
     deployuser: deploy
     sudo: yes
     
-directives:
-    - directive: apt_upgrade
-    - directive: install_cron
-    - directive: add_deploy_user
+plans:
+    - item: apt_upgrade
+    - item: install_cron
+    - item: add_deploy_user
     - files:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt
