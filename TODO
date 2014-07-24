@@ -7,16 +7,12 @@ General TODO
 
 Specific TODO resulting from #1 above
 =====================================
-1) implement subdirs in systems, plans, and files
-  * for systems and plans, files in subdirs will be treated as if they are
-    in the top-level directories
-  * files in subdirs will be referenced by paths relative to toplevel files dir
-2) inline ansible plans
+1) inline ansible plans
   problem: it's a bit more tedious than it needs to be to use files because you
            end up having to reference an ansible file to do anything interesting
   solution: inline ansible stanzas in plan files (and system files)
-3) I'd like it if the hosts line was optional in the ansible stanzas
-4) Files sections in plans lists need to have parameter capability so that I can define key/val pairs that apply to every file in the list
+2) I'd like it if the hosts line was optional in the ansible stanzas
+3) Files sections in plans lists need to have parameter capability so that I can define key/val pairs that apply to every file in the list
 
 Big Picture
 ===========
