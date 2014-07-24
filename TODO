@@ -4,6 +4,7 @@ General TODO
 2) Write tests based on failures
 3) Make tests pass
 4) Repeat
+5) Parallelize over equal priorities
 
 Specific TODO resulting from #1 above
 =====================================
