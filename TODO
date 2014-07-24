@@ -14,6 +14,3 @@ Specific TODO resulting from #1 above
 2) I'd like it if the hosts line was optional in the ansible stanzas
 3) Files sections in plans lists need to have parameter capability so that I can define key/val pairs that apply to every file in the list
 
-Big Picture
-===========
-1) in the plan and system files, shorten to src and dst
