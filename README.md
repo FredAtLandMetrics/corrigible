@@ -69,6 +69,8 @@ The *plans directory* is where plan files are located. There are two types of pl
 
 **Plan container files** look like system configuration files, except that they do not contain hosts sections (or, rather, if they do, then the hosts section will be ignored).  Additionally, there is a naming convention for these files that has implications as to the order in which the plans are processed.
 
+Note that it is perfectly acceptable to put plan container files and ansible excerpt files in subdirectories within the plans directory. Care should be taken to ensure that no two files have the same filename.
+
 System config files and plan container files explained
 ============================================================
 
