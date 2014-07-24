@@ -2,6 +2,8 @@ import jinja2
 import yaml
 import heapq
 import copy
+import os
+import subprocess
 
 from jinja2 import Template
 
@@ -14,6 +16,8 @@ from corrigible.lib.planfilestack import plan_file_stack_push, \
                                          plan_file_stack_as_str
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.lib.selector import run_selector_affirmative
+from corrigible.lib.dirpaths import temp_exec_dirpath
+
 jinja2.Environment(autoescape=False)
 
 MAX_PLAN_ORDER = 9999999

@@ -1,4 +1,7 @@
+import os
+
 from corrigible.lib.system import system_config
+from corrigible.lib.dirpaths import temp_exec_dirpath
 
 def write_ansible_hosts(opts):
     mconf = None
