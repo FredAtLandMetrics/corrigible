@@ -3,6 +3,15 @@ import re
 import heapq
 from corrigible.lib.dirpaths import systems_dirpath, plans_dirpath, files_dirpath
 
+#def _plan_files_iterator():
+    #for i in os.listdir(plans_dirpath()):
+        #yield i
+def _plan_files_iterator():
+    for root, dirnames, filenames in os.walk(plans_dirpath()):
+        for fn in filenames:
+            yield os.path.abspath(os.path.join(root, fn))
+
+    
 _plan_filename_map = None
 _plan_filepath_map = None
 _plan_sortorder_map = None
@@ -23,12 +32,13 @@ def _ensure_plan_filename_map():
                                             #'plans')
         plan_files_dirpath = plans_dirpath()
         #print "plan files dirpath: {}".format(plan_files_dirpath)
-        for filename in os.listdir(plan_files_dirpath):
-            #print "listdir result: {}".format(filename)
-            if os.path.isfile(os.path.join(plan_files_dirpath,filename)):
-                #print "examining: {}".format(filename)
+        plan_iter = _plan_files_iterator()
+        for filepath in plan_iter:
+            #print "listdir result: {}".format(filepath)
+            if os.path.isfile(os.path.join(plan_files_dirpath,filepath)):
+                #print "examining: {}".format(filepath)
                 
-                plan_match = re.search(r"^(\d+)\_(.*)\.plan\.yml$", filename)
+                plan_match = re.search(r"^(\d+)\_(.*)\.plan\.yml$", os.path.basename(filepath))
                 if plan_match:
                     sort_order = int(plan_match.group(1))
                     plan_name = plan_match.group(2)
@@ -38,16 +48,14 @@ def _ensure_plan_filename_map():
                     _plan_sortorder_map[plan_name] = sort_order
                     
                     
-                    #print "adding plan filepath[{}]: {}".format(plan_name, os.path.join(plan_files_dirpath, filename))
-                    _plan_filepath_map[plan_name] = \
-                        os.path.join(plan_files_dirpath, filename)
+                    _plan_filepath_map[plan_name] = filepath
                     
                     heapq.heappush(_plan_filename_map,
                                    (sort_order,
                                     plan_name,
-                                    os.path.join(plan_files_dirpath, filename)))
+                                    filepath))
                                    
-                ansible_match = re.search(r"^(\d+)\_(.*)\.ansible\.yml$", filename)
+                ansible_match = re.search(r"^(\d+)\_(.*)\.ansible\.yml$", os.path.basename(filepath))
                 if ansible_match:
                     sort_order = int(ansible_match.group(1))
                     plan_name = ansible_match.group(2)
@@ -56,14 +64,12 @@ def _ensure_plan_filename_map():
                     
                     _plan_sortorder_map[plan_name] = sort_order
                     
-                    #print "adding ansible filepath[{}]: {}".format(plan_name, os.path.join(plan_files_dirpath, filename))
-                    _plan_filepath_map[plan_name] = \
-                        os.path.join(plan_files_dirpath, filename)
+                    _plan_filepath_map[plan_name] = filepath
                     
                     heapq.heappush(_plan_filename_map,
                                    (sort_order,
                                     plan_name,
-                                    os.path.join(plan_files_dirpath, filename)))
+                                    filepath))
                     
                     
     return _plan_filename_map

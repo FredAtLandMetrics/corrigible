@@ -9,7 +9,9 @@ from corrigible.lib.system import system_config
 from corrigible.lib.exceptions import PlanFileDoesNotExist, \
                                       PlanOmittedByRunSelector, \
                                       UnknownPlanEncountered
-from corrigible.lib.planfilestack import plan_file_stack_push, plan_file_stack_pop
+from corrigible.lib.planfilestack import plan_file_stack_push, \
+                                         plan_file_stack_pop, \
+                                         plan_file_stack_as_str
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.lib.selector import run_selector_affirmative
 jinja2.Environment(autoescape=False)

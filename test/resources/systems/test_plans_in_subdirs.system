@@ -1,0 +1,13 @@
+hosts:
+    - hostname: 'testhost11'
+      hostgroup: 'testgroup11'
+      ip_address: 1.2.3.4
+
+parameters:
+    sudouser: ubuntu
+    deployuser: deploy
+    sudo: yes
+    
+plans:
+    - plan: apt_upgrade
+    - plan: add_misc_users_grp_d

@@ -1,0 +1,9 @@
+- hosts: all
+  user: {{ sudouser }}
+  sudo: {{ sudo }}
+  tasks:
+    - name: add rover
+      user: name=rover comment="Rover" state=present
+    - name: add fido
+      user: name=fido comment="Fido" state=present
+      
