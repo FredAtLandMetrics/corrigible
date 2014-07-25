@@ -6,22 +6,8 @@ Introduction
 * sysV-style ordering of ansible snippets
 * simplified variable substitution
 * run selectors for full vs. partial playbook execution
-    
-From the ansible workflow, corrigible removes:
-* duplicated playbook snippets
-* hosts files
 
-It begins with a workspace, which defaults to */usr/local/etc/corrigible*.  In the workspace, should be three subdirectories: *files*, *plans*, and *systems*:
-* **files** - files to be copied to the provisioned systems.  subdirectories are ok.
-* **systems** - toplevel config files for hosts (or groups of hosts)
-* **plans** - playbook excerpts and *plan* files which allow for intelligent grouping of playbook excerpts
-
-The *systems* and *plans* directories are where all the magic happens for corrigible.  The *systems* directory contains holds *.system* files which tell corrigible how to start the provisioning process for a given host (or group of hosts).
-
-Once the system file and various plan files are in place, provisioning is as simple as:
-```shell
-corrigible somehost
-```
+At some point, it will also provide for automated testing of post-run results and parallelization based on the sysV-style ordering
 
 Why?
 ====
@@ -34,7 +20,10 @@ For us, it will help scale ansible's utility without all the complexity.
 Before You Begin
 ================
 
-As mentioned above, corrigible expects three directories to exist: one for files, one for system config files and one for plan files.
+Corrigible needs workspace, which defaults to */usr/local/etc/corrigible*.  In the workspace, should be three subdirectories: *files*, *plans*, and *systems*:
+* **files** - files to be copied to the provisioned systems.  subdirectories are ok.
+* **systems** - toplevel config files for hosts (or groups of hosts)
+* **plans** - playbook excerpts and *plan* files which allow for intelligent grouping of playbook excerpts
 
 These directories default to */usr/local/etc/corrigible[files|systems|plans]* but can be customized via the following environment variables:
 * **CORRIGIBLE_PATH** - define this to configure a directory which will contain *files*, *systems*, and *plans* subdirectories
@@ -245,6 +234,13 @@ The *81_apt_add_packages.ansible.yml* file, when it is included via the *57_plan
 
 Note that *parameters in higher-level plan container files and in system config files will supercede those specified in lower-level plan container files.*  Using this mechanism, it's possible for multiple systems to use the same plan containers and yet retain the ability to customize plan behavior at the system config file level.
 
+Running Corrigible
+==================
+
+Once the system file and various plan files are in place, provisioning is as simple as:
+```shell
+corrigible somehost
+```
 
 Project Status
 ==============
