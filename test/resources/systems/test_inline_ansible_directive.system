@@ -1,0 +1,19 @@
+hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+params:
+    sudouser: ubuntu
+    sudo: True
+    
+plans:
+    - inline:
+          order: 12
+          ansible:
+            - hosts: all
+              user: {{ sudouser }}
+              sudo: {{ sudo }}
+              tasks:
+                - name: ensure latest os version
+                  apt: upgrade=safe update_cache=yes
+              
+          

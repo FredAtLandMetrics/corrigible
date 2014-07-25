@@ -1,0 +1,23 @@
+hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+
+plans:
+    - files:
+        parameters:
+          mode: 0444
+          order: 50
+        list:
+          - source: toplevel.txt
+            destination: /tmp/test_toplevel.txt
+          - source: otherfile.txt
+            destination: /tmp/otherfile.txt
+    - files:
+        parameters:
+          mode: 0444
+          order: 30
+        list:
+          - source: toplevel.txt
+            destination: /tmp/test_toplevel.txt
+          - source: otherfile.txt
+            destination: /tmp/otherfile.txt
