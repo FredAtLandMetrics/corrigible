@@ -7,7 +7,7 @@ Introduction
 * simplified variable substitution
 * run selectors for full vs. partial playbook execution
 
-At some point, it will also provide for automated testing of post-run results and parallelization based on the sysV-style ordering
+Soon, it will also provide for automated testing of post-run results and parallelization based on the sysV-style ordering
 
 Why?
 ====
@@ -226,7 +226,7 @@ and the plan container file had parameters like:
 parameters:
     apt_packages_to_install: 'php5,imagemagick'
 ```
-The *81_apt_add_packages.ansible.yml* file, when it is included via the *57_plans_test.plan.yml*, will have the following variables available to it:
+The *81_apt_add_packages.ansible.yml* file *(see above)*, when it is included via the *57_plans_test.plan.yml*, will have the following variables available to it:
 * sudouser
 * deployuser
 * sudo
@@ -244,5 +244,8 @@ corrigible somehost
 
 Project Status
 ==============
-The hard parts work and there's tests around key points. Run selectors are now implemented.
- Next I'll be testing corrigible in real-world provisioning situations. I expect things will break.
+The hard parts work and there's tests around key points.  I'm currently trying to use corrigible in real-world provisioning situations to see what I like and don't like so I can make changes, come up with new features, make things faster, etc.
+
+Contact
+=======
+Feedback is welcomed.  Feel free to email me at [fred@landmetrics.com](fred@landmetrics.com).  I do have a bit of a spam problem, so please mention corrigible in the subject line.
