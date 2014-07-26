@@ -1,23 +1,26 @@
 hosts:
     - hostname: 'otherhost'
       ip_address: 2.3.4.5
+      
+parameters:
+    sudouser: ubuntu
 
 plans:
     - files:
         parameters:
-          mode: 0444
+          mode: 0744
           order: 50
         list:
-          - source: toplevel.txt
-            destination: /tmp/test_toplevel.txt
-          - source: otherfile.txt
-            destination: /tmp/otherfile.txt
+          - source: file1.txt
+            destination: /tmp/file1.txt
+          - source: file2.txt
+            destination: /tmp/file2.txt
     - files:
         parameters:
-          mode: 0444
+          mode: 0644
           order: 30
         list:
-          - source: toplevel.txt
-            destination: /tmp/test_toplevel.txt
-          - source: otherfile.txt
-            destination: /tmp/otherfile.txt
+          - source: file3.txt
+            destination: /tmp/file3.txt
+          - source: file4.txt
+            destination: /tmp/file4.txt

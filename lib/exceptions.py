@@ -13,3 +13,11 @@ class UnknownPlanEncountered(Exception):
 class PlanOmittedByRunSelector(Exception):
     pass
       
+class FilesSectionEmpty(Exception):
+    pass
+
+class FilesDictLacksListKey(Exception):
+    pass
+
+class NoSudoUserParameterDefined(Exception):
+    pass

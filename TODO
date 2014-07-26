@@ -14,7 +14,7 @@ Specific TODO resulting from #1 above
            end up having to reference an ansible file to do anything interesting
   solution: inline ansible stanzas in plan files (and system files)
 2) I'd like it if the hosts line was optional in the ansible stanzas (NOTE: it might actually be...need to test it)
-3) Files sections in plans lists need to have parameter capability so that I can define key/val pairs that apply to every file in the list (status: created system file for testing)
+
 
 Tests
 =====

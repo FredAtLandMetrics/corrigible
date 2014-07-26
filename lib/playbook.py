@@ -10,7 +10,10 @@ from jinja2 import Template
 from corrigible.lib.system import system_config
 from corrigible.lib.exceptions import PlanFileDoesNotExist, \
                                       PlanOmittedByRunSelector, \
-                                      UnknownPlanEncountered
+                                      UnknownPlanEncountered, \
+                                      FilesSectionEmpty, \
+                                      FilesDictLacksListKey, \
+                                      NoSudoUserParameterDefined
 from corrigible.lib.planfilestack import plan_file_stack_push, \
                                          plan_file_stack_pop, \
                                          plan_file_stack_as_str
@@ -193,33 +196,69 @@ def _playbook_from_dict__plan(plan_name, params):
     except jinja2.exceptions.TemplateSyntaxError:
         #print "ERR: Template syntax error in {}".format(plan_filepath)
         raise        
-    
-def _playbook_from_dict__files(files_list, params):
-    
-    #print "params: {}".format(params)
-    
-    assert(bool(files_list))
+
+def _playbook_from_dict__files_list(files_list, params, **kwargs):
+    print "files_list: {}".format(files_list)
+    try:
+        assert('sudouser' in params)
+    except AssertionError:
+        raise NoSudoUserParameterDefined()
     
     tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
     
+    output_prefix = '    - copy: '
+    output_suffix = '\n'
+    
+    arg_data = (('src', ['source', 'src']),
+                ('dest', ['destination', 'dest', 'dst']),
+                ('mode', 'mode'),
+                ('owner', 'owner'),
+                ('group', 'group'))
+    
     files = {}
     for f in files_list:
+        print "f: {}".format(f)
+        arg_strs = []
+        for arg_tuple in arg_data:
+            
+            ansible_arg_key_str, corrigible_arg_keys = arg_tuple
+            print "key: {}".format(str(corrigible_arg_keys))
+            if (type(corrigible_arg_keys) is not list):
+                corrigible_arg_keys = [corrigible_arg_keys]
+                
+            for corrigible_arg_key in corrigible_arg_keys:
+                
+                newargstr = None
+                try:
+                    assert(corrigible_arg_key in kwargs)
+                    newargstr = '{}={}'.format(ansible_arg_key_str, kwargs[corrigible_arg_key])
+                    break
+                except AssertionError:
+                    try:
+                        assert(corrigible_arg_key in f)
+                        assert(newargstr is None)
+                        newargstr = '{}={}'.format(ansible_arg_key_str, f[corrigible_arg_key])
+                    except AssertionError:
+                        continue   # I know, I know...it seems more explicit
+                    
+                if newargstr is not None:
+                    arg_strs.append(newargstr)
+                    
+        try:
+            assert(len(arg_strs) > 0)
+        except AssertionError:
+            continue
         
-        txt = '    - copy: src={} dest={}'.format(f['source'], f['destination'])
-        if 'mode' in f:
-            txt += ' mode={}'.format(str(f['mode']))
-        if 'owner' in f:
-            txt += ' owner={}'.format(str(f['owner']))
-        if 'group' in f:
-            txt += ' group={}'.format(str(f['group']))
-        txt += '\n'
+        txt = output_prefix + " ".join(arg_strs) + output_suffix
         
         order = '0'
         try:
-            order = f['order']
+            order = kwargs['order']
         except KeyError:
-            pass
-        
+            try:
+                order = f['order']
+            except KeyError:
+                pass
         order_as_str = str(order)
         
         try:
@@ -232,6 +271,36 @@ def _playbook_from_dict__files(files_list, params):
         ret.append((int(order_as_str), txt))
         
     return ret            
+    
+    
+def _playbook_from_dict__files_dict(files_dict, params):
+    try:
+        assert("list" in files_dict)
+    except AssertionError:
+        raise FilesDictLacksListKey()
+    print "cp1"
+    try:
+        print "cp2"
+        assert("parameters" in files_dict and bool(files_dict["parameters"]))
+        files_params = files_dict["parameters"]
+        print "cp3"
+        return _playbook_from_dict__files_list(files_dict["list"], params, **files_params)
+    except AssertionError:
+        return _playbook_from_dict__files_list(files_dict["list"], params)
+    
+    
+    
+def _playbook_from_dict__files(files_list, params):
+    
+    #print "params: {}".format(params)
+    try:
+        assert(type(files_list) is list and bool(files_list))
+        return _playbook_from_dict__files_list(files_list, params)
+    except AssertionError:
+        assert(type(files_list) is dict and bool(files_list))
+        return _playbook_from_dict__files_dict(files_list, params)
+    except Exception:
+        raise FilesSectionEmpty()
       
 def _playbook_from_dict(**kwargs):
     
@@ -242,7 +311,7 @@ def _playbook_from_dict(**kwargs):
     
     try:
         plans_dict = kwargs['plans']
-        #print "plans({}), parameters({})".format(kwargs['plans'], params)
+        print "plans({}), parameters({})".format(kwargs['plans'], params)
         
         try:
             params = _merge_args(params, plans_dict['parameters'])
@@ -266,8 +335,10 @@ def _playbook_from_dict(**kwargs):
             except KeyError:
                 try:
                     files_list = plans_dict['files']
-                    #print "files_list: {}".format(str(files_list))
-                    return _playbook_from_dict__files(files_list, params)
+                    print "files_list: {}".format(str(files_list))
+                    ret = _playbook_from_dict__files(files_list, params)
+                    print "ret: {}".format(ret)
+                    return ret
                 except KeyError:
                     raise UnknownPlanEncountered()
            
