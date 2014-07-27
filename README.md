@@ -15,8 +15,6 @@ I really like ansible, but it's awkward at scale.  I feel like it's made to be s
 
 After a great discussion with a coworker about our particular set of requirements, I scratched out a design for corrigible to meet our needs without sacrificing ansible's simplicity (which we both agreed was priority #1).
 
-For us, it will help scale ansible's utility without all the complexity.
-
 Before You Begin
 ================
 
@@ -115,6 +113,15 @@ plans:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt
           mode: 0444
+    - inline:
+          order: 12
+          ansible:
+            - hosts: all
+              user: {{ sudouser }}
+              sudo: {{ sudo }}
+              tasks:
+                - name: ensure latest os version
+                  apt: upgrade=safe update_cache=yes
 
 ```
 
@@ -147,7 +154,7 @@ The hosts section also illustrates one of the more interesting features of corri
 
 ###The plans section
 
-The plans section tells corrigible what it will be doing to the hosts listed in the hosts section.  It can contain any number of references to plan container files, ansible workbook extracts, and file transfer listings. It's not immediately obvious, but the plans section in the example above contains all three types of references.
+The plans section tells corrigible what it will be doing to the hosts listed in the hosts section.  It can contain any number of references to plan container files, ansible workbook extracts, inline ansible snippets, and file transfer listings. It's not immediately obvious, but the plans section in the example above contains all four types of references.
 
 ```YAML
 plans:
