@@ -17,4 +17,4 @@ plans:
     - files:
         - source: files/var_subst_test2.txt
           destination: /tmp/var_subst_test2.txt
-          perform_variable_substituion: true
+          parameter_substitution: true
