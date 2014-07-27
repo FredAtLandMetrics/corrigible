@@ -1,5 +1,6 @@
 import os
 import yaml
+import copy
 
 from jinja2 import Template
 
@@ -19,15 +20,50 @@ def system_config(opts):
             system_config_filepath = os.path.join(systems_dirpath(), "{}.{}".format(system_name, SYSTEM_FILE_SUFFIX))
             #print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath)
             with open (system_config_filepath, "r") as system_def_fh: 
-                rendered_system_def_str = Template(system_def_fh.read()).render(**os.environ)
                 
-                rendered_system_def_str = _filter_system_def(rendered_system_def_str, opts)
+                unrendered_system_def_str = system_def_fh.read()
+                pass1_rendered_system_def_str = \
+                    Template(unrendered_system_def_str).render(**os.environ)
+                
+                #print "pass1: {}".format(pass1_rendered_system_def_str)
+                
+                # get params in pass1
+                temp_conf = yaml.load(pass1_rendered_system_def_str)
+                #print "temp_conf: {}".format(temp_conf)
+                try:
+                    parameter_dict = copy.copy(temp_conf['parameters'])
+                except KeyError:
+                    parameter_dict = None
+                except Exception as e:
+                    print "E: {}".format(str(e))
+                #print "CP100!!!"
+                # merge in parameters (with os.environ trumping parameters)
+                try:
+                    assert(parameter_dict is None)
+                    render_params = os.environ
+                except AssertionError:
+                    render_params = copy.copy(parameter_dict)
+                    for key, val in os.environ.iteritems():
+                        render_params[key] = val
+                        
+                # final system config load
+                pass2_rendered_system_def_str = \
+                    Template(unrendered_system_def_str).render(**render_params)
+                #print "pass2: {}".format(pass2_rendered_system_def_str)
+                
+                # filter the output str (remove hosts that are excluded via selectors)
+                rendered_system_def_str = \
+                    _filter_system_def(pass2_rendered_system_def_str, opts)
+                
                 #print "rendered_system_def_str: {}".format(rendered_system_def_str)
                 _system_conf = yaml.load(rendered_system_def_str)
                 
     except IOError:
         print "\nERR: system config not found at: {}, system_config will be None\n".format(system_config_filepath)
     return _system_conf
+    
+#def _get_system_config_parameters(sysdef_str):
+    
     
 def _filter_system_def(raw, opts):
     system_conf = yaml.load(raw)
