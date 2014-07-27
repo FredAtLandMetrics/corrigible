@@ -199,7 +199,9 @@ def _playbook_from_dict__plan(plan_name, params):
                 pass2_rendered_yaml_str = Template(raw_yaml_str).render()
             
             yaml_struct = yaml.load(pass2_rendered_yaml_str)
-            
+            if type(yaml_struct) is list and len(yaml_struct) == 1:
+                yaml_struct = yaml_struct[0]
+            print "yaml_struct: {}".format(yaml_struct)
                 
             if 'plans' in yaml_struct.keys() or \
                 'files' in yaml_struct.keys():
