@@ -19,7 +19,7 @@ os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 PLAYBOOK_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-output.yml"
 HOSTS_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
 
-class TestSameFileParamSubst(CorrigibleTest):
+class TestInlineAnsiblePlanSystemConfig(CorrigibleTest):
 
     def setUp(self):
         self.output_playbook_filepath = PLAYBOOK_FILEPATH__SYSTEMCONF_TEST
@@ -28,31 +28,15 @@ class TestSameFileParamSubst(CorrigibleTest):
         
     def regen(self, **kwargs):
         """re-run corrigible for the simple plan test config"""
-        self.rerun_corrigible(system_config="test_same_file_parameter_subst",
+        self.rerun_corrigible(system_config="test_inline_ansible_directive",
                               generate_files_only=True)
-        
-    def test_same_file_param_subst_in_system_file(self):
-        self.regen()
-        s = self.playbook_as_struct()
-        
-        self.assertTrue(type(s) is list and len(s) > 0)
-        self.assertTrue(type(s[0]) is dict)
-        self.assertTrue('tasks' in s[0] and type(s[0]['tasks']) is list and len(s[0]['tasks']) > 0)
-        self.assertTrue(type(s[0]['tasks'][0]) is dict)
-        self.assertTrue('copy' in s[0]['tasks'][0])
-        self.assertTrue('somefile.txt' in str(s[0]['tasks'][0]['copy']))
-        
-    def test_same_file_param_subst_in_plan_file(self):
-        self.regen()
-        s = self.playbook_as_struct()
-        
-        self.assertTrue(type(s) is list and len(s) > 0)
-        self.assertTrue(type(s[1]) is dict)
-        self.assertTrue('tasks' in s[1] and type(s[1]['tasks']) is list and len(s[1]['tasks']) > 0)
-        self.assertTrue(type(s[1]['tasks'][0]) is dict)
-        self.assertTrue('copy' in s[1]['tasks'][0])
-        self.assertTrue('blahfn.txt' in str(s[1]['tasks'][0]['copy']))
-        
 
+    def test_inline_ansible_plan(self):
+        self.regen()
+        s = self.playbook_as_struct()
+        tasksrec = {}
+        
+        
 if __name__ == '__main__':
     unittest.main()   
+        

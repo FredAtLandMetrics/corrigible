@@ -159,26 +159,47 @@ def _text_from_tuple_list(*args):
     return ret
       
 def _playbook_from_dict__plan(plan_name, params):      
+    
     plan_ndx = plan_index(plan_name)
-    #plan_filepath = plan_filepath(plan_name)
     plan_path = plan_filepath(plan_name)
+    
+    #plan_filepath = plan_filepath(plan_name)
     #print "plan path: {}".format(plan_path)
+    
     try:
                         
         with open(plan_path, "r") as fh:
             dict_yaml_text = None
-            if params:
-                #print "params!: {}".format(params)
-                initial_template_text = fh.read()
-                #print "init temp txt: {}".format(initial_template_text)
-                dict_yaml_text = Template(initial_template_text).render(params)
-                #print "cp -after"
-            else:
-                dict_yaml_text = Template(fh.read()).render()
-
-            yaml_struct = yaml.load(dict_yaml_text)
-            if type(yaml_struct) is list and len(yaml_struct) == 1:
-                yaml_struct = yaml_struct[0]
+            
+            raw_yaml_str = fh.read()
+            try:
+                assert(params is not None and type(params) is 'dict' and bool(params))
+                pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
+                template_render_params = copy.copy(params)
+            except AssertionError:
+                pass1_rendered_yaml_str = Template(raw_yaml_str).render()
+                template_render_params = {}
+                
+            pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
+            
+            try:
+                assert('parameters' in pass1_yaml_struct and type(pass1_yaml_struct['parameters']) is dict and bool(pass1_yaml_struct['parameters']))
+                for key,val in pass1_yaml_struct['parameters'].iteritems():
+                    try:
+                        assert(key in template_render_params)
+                    except AssertionError:
+                        template_render_params[key] = val
+            except AssertionError:
+                pass
+                
+            try:
+                assert(bool(template_render_params))
+                pass2_rendered_yaml_str = Template(raw_yaml_str).render(template_render_params)
+            except AssertionError:
+                pass2_rendered_yaml_str = Template(raw_yaml_str).render()
+            
+            yaml_struct = yaml.load(pass2_rendered_yaml_str)
+            
                 
             if 'plans' in yaml_struct.keys() or \
                 'files' in yaml_struct.keys():
@@ -186,7 +207,7 @@ def _playbook_from_dict__plan(plan_name, params):
                 _, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
                 return [(plan_ndx, "{}\n".format(plan_text))]
             else:
-                return [(plan_ndx, "{}\n".format(dict_yaml_text))]
+                return [(plan_ndx, "{}\n".format(pass2_rendered_yaml_str))]
             #return (plan_index, template_text)
     except TypeError:
         raise PlanFileDoesNotExist(plan_name)
@@ -278,12 +299,12 @@ def _playbook_from_dict__files_dict(files_dict, params):
         assert("list" in files_dict)
     except AssertionError:
         raise FilesDictLacksListKey()
-    print "cp1"
+    #print "cp1"
     try:
-        print "cp2"
+        #print "cp2"
         assert("parameters" in files_dict and bool(files_dict["parameters"]))
         files_params = files_dict["parameters"]
-        print "cp3"
+        #print "cp3"
         return _playbook_from_dict__files_list(files_dict["list"], params, **files_params)
     except AssertionError:
         return _playbook_from_dict__files_list(files_dict["list"], params)
@@ -311,7 +332,7 @@ def _playbook_from_dict(**kwargs):
     
     try:
         plans_dict = kwargs['plans']
-        print "plans({}), parameters({})".format(kwargs['plans'], params)
+        #print "plans({}), parameters({})".format(kwargs['plans'], params)
         
         try:
             params = _merge_args(params, plans_dict['parameters'])
@@ -323,6 +344,7 @@ def _playbook_from_dict(**kwargs):
                                        parameters=params)
         except KeyError:
             
+            # handle plan type: plan file
             try:
                 plan_name = plans_dict['plan']
                 #print "plan name: {}".format(plan_name)
@@ -333,14 +355,25 @@ def _playbook_from_dict(**kwargs):
                 
                 return _playbook_from_dict__plan(plan_name, params)
             except KeyError:
+                
                 try:
+                    
+                    # handle plan type: files
                     files_list = plans_dict['files']
-                    print "files_list: {}".format(str(files_list))
+                    #print "files_list: {}".format(str(files_list))
                     ret = _playbook_from_dict__files(files_list, params)
-                    print "ret: {}".format(ret)
+                    #print "ret: {}".format(ret)
                     return ret
                 except KeyError:
-                    raise UnknownPlanEncountered()
+                    
+                    try:
+                        
+                        
+                        inline_snippet = plans_dict['inline']
+                        ret = _playbook_from_dict__inline(inline_snippet, params)
+                        # return snippets as list of (order, ansible string)
+                    except KeyError:    
+                        raise UnknownPlanEncountered()
            
     except KeyError:
         raise RequiredParameterPlansNotProvided()

@@ -12,3 +12,5 @@ plans:
         - source: {{ srcfn }}
           destination: /tmp/test_toplevel.txt
           mode: 0444
+          order: 10
+    - plan: same_file_param_subst

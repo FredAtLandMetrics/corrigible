@@ -1,0 +1,9 @@
+parameters:
+    file_to_copy: 'blahfn.txt'
+        
+plans:
+    - files:
+        - source: {{ file_to_copy }}
+          destination: /tmp/fileout.txt
+          mode: 0755
+          order: 39
