@@ -23,6 +23,12 @@ class CorrigibleTest(unittest.TestCase):
         except AssertionError:
             pass
         
+        try:
+            assert(bool(kwargs['skip_cleanup']))
+            call_list.append("--skip-cleanup")
+        except AssertionError:
+            pass
+        
         call_list.append("--playbook-output-file={}".format(self.output_playbook_filepath))
         call_list.append("--hosts-output-file={}".format(self.output_hostsfile_filepath))
         
