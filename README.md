@@ -171,6 +171,15 @@ plans:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt
           mode: 0444
+    - inline:
+          order: 12
+          ansible:
+            - hosts: all
+              user: {{ sudouser }}
+              sudo: {{ sudo }}
+              tasks:
+                - name: ensure latest os version
+                  apt: upgrade=safe update_cache=yes
 ```
 The lines that begin with a *- plan:* can refer to *either* a plan container file or an ansible excerpt file. Like the host records above, they can contain run selectors and can be similarly included/excluded.
 
