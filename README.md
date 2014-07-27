@@ -181,9 +181,13 @@ plans:
                 - name: ensure latest os version
                   apt: upgrade=safe update_cache=yes
 ```
+The sections that begin with *- files:* instruct corrigible to create ansible file copy directives based on the information therein.
+
+The sections that begin with *- inline:* are simply copied into the resulting ansible playbook using the indicated order (which defaults to zero if unspecified.
+
 The lines that begin with a *- plan:* can refer to *either* a plan container file or an ansible excerpt file. Like the host records above, they can contain run selectors and can be similarly included/excluded.
 
-As it happens, all of the plans in this section are refer to ansible playbook excerpts except for the one with the 'plans-test' name.  Note that there's no way to tell which is which without looking at the files in the plans directory.
+As it happens, all of the plans in this section refer to ansible playbook excerpts except for the one with the 'plans-test' name.  Note that there's no way to tell which is which without looking at the files in the plans directory.
 ```
 fred@chimera:~/Projects/corrigible$ ls test/resources/plans
 04_add_deploy_user.ansible.yml
