@@ -21,3 +21,6 @@ class FilesDictLacksListKey(Exception):
 
 class NoSudoUserParameterDefined(Exception):
     pass
+
+class MalformedInlineAnsibleSnippet(Exception):
+    pass

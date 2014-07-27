@@ -324,7 +324,10 @@ def _playbook_from_dict__files(files_list, params):
         return _playbook_from_dict__files_dict(files_list, params)
     except Exception:
         raise FilesSectionEmpty()
-      
+    
+def _playbook_from_dict__inline(snippet, order):
+    return [(order, yaml.dump(snippet))]
+
 def _playbook_from_dict(**kwargs):
     
     try:
@@ -371,8 +374,20 @@ def _playbook_from_dict(**kwargs):
                     try:
                         
                         
-                        inline_snippet = plans_dict['inline']
-                        ret = _playbook_from_dict__inline(inline_snippet, params)
+                        inline_snippet_container = plans_dict['inline']
+                        try:
+                            assert('ansible' in inline_snippet_container)
+                            try:
+                                order = inline_snippet_container['order']
+                            except KeyError:
+                                order = 0
+                                
+                            return _playbook_from_dict__inline(inline_snippet_container['ansible'], order)
+                            
+                        except AssertionError:
+                            raise MalformedInlineAnsibleSnippet()
+                        
+                        
                         # return snippets as list of (order, ansible string)
                     except KeyError:    
                         raise UnknownPlanEncountered()
