@@ -2,31 +2,14 @@
 
 import argparse
 import os
-#import yaml
-#import heapq
-#import jinja2
-#import copy
-#import subprocess
-#import copy
-#from jinja2 import Template
-#from corrigible.lib.dirpaths import systems_dirpath, plans_dirpath, files_dirpath, temp_exec_dirpath
-#from corrigible.lib.plan import plan_index, plan_filepath
-#from corrigible.lib.exceptions import RequiredParameterPlansNotProvided, \
-                                      #PlansDictContainedNoPlans, \
-                                      #PlanFileDoesNotExist, \
-                                      #UnknownPlanEncountered, \
-                                      #PlanOmittedByRunSelector
+
 from corrigible.lib.playbook import write_ansible_playbook, run_ansible_playbook, ansible_playbook_filepath
-#from corrigible.lib.system import system_config
 from corrigible.lib.hostsfile import write_ansible_hosts, ansible_hostsfile_filepath
 from corrigible.lib.selector import set_run_selectors_list
+
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
 PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
-
-
-
-        
 
 if __name__ == '__main__':
 
@@ -41,7 +24,8 @@ if __name__ == '__main__':
                  ( "playbook-output-file", "full", "the playbook output file (for testing, use discouraged)"),
                  ( "hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
                  ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ),
-                 ( "selectors", "full", "a list of run selectors to be applied to include/exclude plans" ) )
+                 ( "selectors", "full", "a list of run selectors to be applied to include/exclude plans" ),
+                 ( "skip-cleanup", "short", "for development/testing purposes...leaves temp files in place" ) )
     
     for arginfo in progargs:
         optname, opttype, opthelp = arginfo
@@ -62,12 +46,9 @@ if __name__ == '__main__':
             selectors = [s.trim() for s in options['selectors'].split(',')]
         elif type(options['selectors']) is str and bool(options['selectors']):
             selectors = [options['selectors']]
-        #print "SETTING SELECTORS!!"
         set_run_selectors_list(selectors)
     except (KeyError, AttributeError, TypeError):
         pass
-    
-        
     
     write_ansible_hosts(options)
     write_ansible_playbook(options)
