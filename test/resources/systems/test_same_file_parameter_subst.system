@@ -1,0 +1,14 @@
+hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+      
+parameters:
+    sudouser: ubuntu
+    sudo: True
+    srcfn: somefile.txt
+    
+plans:
+    - files:
+        - source: {{ srcfn }}
+          destination: /tmp/test_toplevel.txt
+          mode: 0444
