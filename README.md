@@ -254,6 +254,8 @@ The *81_apt_add_packages.ansible.yml* file *(see above)*, when it is included vi
 
 Note that *parameters in higher-level plan container files and in system config files will supercede those specified in lower-level plan container files.*  Using this mechanism, it's possible for multiple systems to use the same plan containers and yet retain the ability to customize plan behavior at the system config file level.
 
+Also, values declared in the parameters section **are available to parameter substituion in the same file**.
+
 Running Corrigible
 ==================
 
