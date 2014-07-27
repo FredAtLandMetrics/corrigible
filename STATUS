@@ -5,7 +5,10 @@ Project Status
 * Hosts and playbook files are being generated and executed
 * Simplified file transfer syntax (don't have to use ansible file module)
 * Run selectors working for hosts and plans
+* Parameters for files lists
 
 Not Yet Working
 ===============
-TBD
+* inline ansible snippets
+* parallelization by order num
+* testing framework
