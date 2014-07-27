@@ -9,11 +9,7 @@ General TODO
 
 Specific TODO resulting from #1 above
 =====================================
-1) inline ansible plans (status: created system file for testing)
-  problem: it's a bit more tedious than it needs to be to use files because you
-           end up having to reference an ansible file to do anything interesting
-  solution: inline ansible stanzas in plan files (and system files)
-2) I'd like it if the hosts line was optional in the ansible stanzas (NOTE: it might actually be...need to test it)
+1) I'd like it if the hosts line was optional in the ansible stanzas (NOTE: it might actually be...need to test it)
 
 
 Tests
