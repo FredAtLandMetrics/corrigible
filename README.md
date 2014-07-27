@@ -268,6 +268,8 @@ Project Status
 ==============
 The hard parts work and there's tests around key points.  I'm currently trying to use corrigible in real-world provisioning situations to see what I like and don't like so I can make changes, come up with new features, make things faster, etc.
 
+Also, I really need to make a github repo for examples.
+
 Contact
 =======
 Feedback is welcomed.  Feel free to email me at [fred@landmetrics.com](fred@landmetrics.com).  I do have a bit of a spam problem, so please mention corrigible in the subject line.
