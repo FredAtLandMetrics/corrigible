@@ -1,0 +1,20 @@
+hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+      
+parameters:
+    sudouser: ubuntu
+
+plans:
+    - files:
+        parameters:
+          mode: 0744
+          order: 50
+          perform_variable_substituion: true
+        list:
+          - source: files/var_subst_test1.txt
+            destination: /tmp/var_subst_test1.txt
+    - files:
+        - source: files/var_subst_test2.txt
+          destination: /tmp/var_subst_test2.txt
+          perform_variable_substituion: true
