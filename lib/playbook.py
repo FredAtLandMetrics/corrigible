@@ -165,7 +165,7 @@ def _playbook_from_dict__plan(plan_name, params):
     
     #plan_filepath = plan_filepath(plan_name)
     #print "plan path: {}".format(plan_path)
-    
+    #print "params({}): {}".format(str(type(params)), params)
     try:
                         
         with open(plan_path, "r") as fh:
@@ -173,8 +173,10 @@ def _playbook_from_dict__plan(plan_name, params):
             
             raw_yaml_str = fh.read()
             try:
-                assert(params is not None and type(params) is 'dict' and bool(params))
+                assert(params is not None and type(params) is dict and bool(params))
+                #print "here1!"
                 pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
+                #print "here2!"
                 template_render_params = copy.copy(params)
             except AssertionError:
                 pass1_rendered_yaml_str = Template(raw_yaml_str).render()
@@ -183,7 +185,9 @@ def _playbook_from_dict__plan(plan_name, params):
             pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
             
             try:
-                assert('parameters' in pass1_yaml_struct and type(pass1_yaml_struct['parameters']) is dict and bool(pass1_yaml_struct['parameters']))
+                assert('parameters' in pass1_yaml_struct and \
+                       type(pass1_yaml_struct['parameters']) is dict and \
+                       bool(pass1_yaml_struct['parameters']))
                 for key,val in pass1_yaml_struct['parameters'].iteritems():
                     try:
                         assert(key in template_render_params)
@@ -192,6 +196,8 @@ def _playbook_from_dict__plan(plan_name, params):
             except AssertionError:
                 pass
                 
+            #print "template_render_params: {}".format(str(template_render_params))
+                
             try:
                 assert(bool(template_render_params))
                 pass2_rendered_yaml_str = Template(raw_yaml_str).render(template_render_params)
@@ -199,18 +205,28 @@ def _playbook_from_dict__plan(plan_name, params):
                 pass2_rendered_yaml_str = Template(raw_yaml_str).render()
             
             yaml_struct = yaml.load(pass2_rendered_yaml_str)
-            if type(yaml_struct) is list and len(yaml_struct) == 1:
-                yaml_struct = yaml_struct[0]
-            print "yaml_struct: {}".format(yaml_struct)
-                
-            if 'plans' in yaml_struct.keys() or \
-                'files' in yaml_struct.keys():
-                #print "calling with yaml struct"
+        
+            # so, now it's either a rendered ansible yml or a rendered plan yml
+            try:
+                assert(type(yaml_struct) is dict and 'plans' in yaml_struct)
                 _, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
                 return [(plan_ndx, "{}\n".format(plan_text))]
-            else:
+            except AssertionError:
+                assert(type(yaml_struct) is list and len(yaml_struct) > 0)
                 return [(plan_ndx, "{}\n".format(pass2_rendered_yaml_str))]
-            #return (plan_index, template_text)
+            
+            #if type(yaml_struct) is list and len(yaml_struct) == 1:
+                #yaml_struct = yaml_struct[0]
+            #print "yaml_struct: {}".format(yaml_struct)
+                
+            #if 'plans' in yaml_struct.keys() or \
+                #'files' in yaml_struct.keys():
+                ##print "calling with yaml struct"
+                #_, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
+                #return [(plan_ndx, "{}\n".format(plan_text))]
+            #else:
+                #return [(plan_ndx, "{}\n".format(pass2_rendered_yaml_str))]
+            ##return (plan_index, template_text)
     except TypeError:
         raise PlanFileDoesNotExist(plan_name)
     except UnknownPlanEncountered:
