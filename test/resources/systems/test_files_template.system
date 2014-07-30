@@ -1,0 +1,12 @@
+hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+      
+parameters:
+    sudouser: ubuntu
+
+plans:
+    - files:
+      - source: files/test_template_file.txt
+        destination: /tmp/file1.txt
+        template: yes
