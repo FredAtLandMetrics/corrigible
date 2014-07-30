@@ -13,7 +13,8 @@ from corrigible.lib.exceptions import PlanFileDoesNotExist, \
                                       UnknownPlanEncountered, \
                                       FilesSectionEmpty, \
                                       FilesDictLacksListKey, \
-                                      NoSudoUserParameterDefined
+                                      NoSudoUserParameterDefined, \
+                                      UnparseablePlanFile
 from corrigible.lib.planfilestack import plan_file_stack_push, \
                                          plan_file_stack_pop, \
                                          plan_file_stack_as_str
@@ -66,11 +67,14 @@ def write_ansible_playbook(opts):
             
         playbook_output_filepath = ansible_playbook_filepath(opts)
         #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
+        #print "plans: {}".format(str(plans))
         try:
             assert(bool(plans))
+            #print "cp0"
             with open(ansible_playbook_filepath(opts), "w") as fh:
+                #print "cp1"
                 order, playbook_output = _playbook_from_list( plans=plans, parameters=params )
-                
+                #print "cp2"
                 playbook_output = _filter_final_playbook_output(playbook_output, opts)
                 
                 if bool(playbook_output):
@@ -212,9 +216,11 @@ def _playbook_from_dict__plan(plan_name, params):
                 _, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
                 return [(plan_ndx, "{}\n".format(plan_text))]
             except AssertionError:
-                assert(type(yaml_struct) is list and len(yaml_struct) > 0)
-                return [(plan_ndx, "{}\n".format(pass2_rendered_yaml_str))]
-            
+                try:
+                    assert(type(yaml_struct) is list and len(yaml_struct) > 0)
+                    return [(plan_ndx, "{}\n".format(pass2_rendered_yaml_str))]
+                except AssertionError:
+                    raise UnparseablePlanFile()
             #if type(yaml_struct) is list and len(yaml_struct) == 1:
                 #yaml_struct = yaml_struct[0]
             #print "yaml_struct: {}".format(yaml_struct)
@@ -237,7 +243,7 @@ def _playbook_from_dict__plan(plan_name, params):
         raise        
 
 def _playbook_from_dict__files_list(files_list, params, **kwargs):
-    print "files_list: {}".format(files_list)
+    #print "files_list: {}".format(files_list)
     try:
         assert('sudouser' in params)
     except AssertionError:
@@ -256,12 +262,12 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     
     files = {}
     for f in files_list:
-        print "f: {}".format(f)
+        #print "f: {}".format(f)
         arg_strs = []
         for arg_tuple in arg_data:
             
             ansible_arg_key_str, corrigible_arg_keys = arg_tuple
-            print "key: {}".format(str(corrigible_arg_keys))
+            #print "key: {}".format(str(corrigible_arg_keys))
             if (type(corrigible_arg_keys) is not list):
                 corrigible_arg_keys = [corrigible_arg_keys]
                 
@@ -407,6 +413,8 @@ def _playbook_from_dict(**kwargs):
                         # return snippets as list of (order, ansible string)
                     except KeyError:    
                         raise UnknownPlanEncountered()
+            except UnparseablePlanFile as e:
+                print "ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str())
            
     except KeyError:
         raise RequiredParameterPlansNotProvided()

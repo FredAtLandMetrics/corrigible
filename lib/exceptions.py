@@ -24,3 +24,6 @@ class NoSudoUserParameterDefined(Exception):
 
 class MalformedInlineAnsibleSnippet(Exception):
     pass
+
+class UnparseablePlanFile(Exception):
+    pass

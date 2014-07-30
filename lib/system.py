@@ -18,7 +18,7 @@ def system_config(opts):
             system_name = opts["system"]
             plan_file_stack_push(system_name)
             system_config_filepath = os.path.join(systems_dirpath(), "{}.{}".format(system_name, SYSTEM_FILE_SUFFIX))
-            #print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath)
+            print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath)
             with open (system_config_filepath, "r") as system_def_fh: 
                 
                 unrendered_system_def_str = system_def_fh.read()
