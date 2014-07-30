@@ -268,7 +268,7 @@ Project Status
 ==============
 The hard parts work and there's tests around key points.  I'm currently trying to use corrigible in real-world provisioning situations to see what I like and don't like so I can make changes, come up with new features, make things faster, etc.
 
-Also, I really need to make a github repo for examples.
+Also, I've put up a [repository for examples](https://github.com/FredAtLandMetrics/corrigible-example1).
 
 Contact
 =======
