@@ -4,6 +4,8 @@ import heapq
 import copy
 import os
 import subprocess
+import tempfile
+import traceback
 
 from jinja2 import Template
 
@@ -242,6 +244,14 @@ def _playbook_from_dict__plan(plan_name, params):
         #print "ERR: Template syntax error in {}".format(plan_filepath)
         raise        
 
+def _str_bool(v):
+    try:
+        assert((type(v) is str and v.lower() in ['yes','true']) or
+               (type(v) is bool and bool(v)))
+        return True
+    except AssertionError:
+        return False
+
 def _playbook_from_dict__files_list(files_list, params, **kwargs):
     #print "files_list: {}".format(files_list)
     try:
@@ -276,19 +286,88 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                 newargstr = None
                 try:
                     assert(corrigible_arg_key in kwargs)
-                    newargstr = '{}={}'.format(ansible_arg_key_str, kwargs[corrigible_arg_key])
+                    ansible_arg_val_str = kwargs[corrigible_arg_key]
+                    
+                    try:
+                        assert(ansible_arg_key_str == 'src')
+                        assert(('template' in kwargs and _str_bool(kwargs['template'])) or
+                               ('template' in f and _str_bool(f['template'])))
+                        
+                        # HERE!!!
+                        with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
+                            raw_template_contents_str = sfh.read()
+                            fh, filepath = tempfile.mkstemp()
+                            with open(filepath, 'w') as dfh:
+                                dfh.write(Template(raw_template_contents_str).render(params))
+                            ansible_arg_val_str = filepath
+                        
+                    except AssertionError:
+                        pass
+                    
+                    except Exception as e:
+                        print(
+                            'unhandled exception encountered processing files list: ' +
+                            '{}, {}\n{}'. \
+                                format(
+                                    str(e.__class__.__name__), 
+                                    str(e.args),
+                                    traceback.format_exc(),
+                                )
+                        )
+                    
+                    newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
                     break
                 except AssertionError:
                     try:
                         assert(corrigible_arg_key in f)
                         assert(newargstr is None)
-                        newargstr = '{}={}'.format(ansible_arg_key_str, f[corrigible_arg_key])
+                        ansible_arg_val_str = f[corrigible_arg_key]
+                        
+                        try:
+                            assert(ansible_arg_key_str == 'src')
+                            assert(('template' in kwargs and _str_bool(kwargs['template'])) or
+                                ('template' in f and _str_bool(f['template'])))
+                            
+                            # HERE!!!
+                            with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
+                                raw_template_contents_str = sfh.read()
+                                fh, filepath = tempfile.mkstemp()
+                                with open(filepath, 'w') as dfh:
+                                    dfh.write(Template(raw_template_contents_str).render(params))
+                                
+                                ansible_arg_val_str = filepath
+                            
+                        except AssertionError:
+                            pass
+                         
+                        except Exception as e:
+                            print(
+                                'unhandled exception encountered processing files list: ' +
+                                '{}, {}\n{}'. \
+                                    format(
+                                        str(e.__class__.__name__), 
+                                        str(e.args),
+                                        traceback.format_exc(),
+                                    )
+                            )
+                        
+                        newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
                     except AssertionError:
                         continue   # I know, I know...it seems more explicit
                     
                 if newargstr is not None:
                     arg_strs.append(newargstr)
-                    
+        try:
+            assert(str(f['template']).lower() in ['yes','true'])
+            
+            # create temp file
+            
+            # write template output to temp file
+            
+            # update 
+            
+        except:
+            pass
         try:
             assert(len(arg_strs) > 0)
         except AssertionError:
