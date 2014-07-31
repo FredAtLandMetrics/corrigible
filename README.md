@@ -110,9 +110,24 @@ plans:
     - plan: plans_test
     - plan: add_deploy_user
     - files:
-        - source: toplevel.txt
+        - source: files/toplevel.txt
           destination: /tmp/test_toplevel.txt
           mode: 0444
+          order: 35
+        - source: files/tmpl/templex.html
+          destination: /var/www/index.html
+          mode: 0444
+          template: yes
+          order: 35
+    - files:
+        parameters:
+          order: 75
+          mode: 0644
+          owner: fred
+          group: nohomersclub
+        list:
+          - source: files/somefile.txt
+            destination: /etc/some/file.txt
     - inline:
           order: 12
           ansible:
@@ -168,9 +183,24 @@ plans:
     - plan: plans_test
     - plan: add_deploy_user
     - files:
-        - source: toplevel.txt
+        - source: files/toplevel.txt
           destination: /tmp/test_toplevel.txt
           mode: 0444
+          order: 35
+        - source: files/tmpl/templex.html
+          destination: /var/www/index.html
+          mode: 0444
+          template: yes
+          order: 35
+    - files:
+        parameters:
+          order: 75
+          mode: 0644
+          owner: fred
+          group: nohomersclub
+        list:
+          - source: files/somefile.txt
+            destination: /etc/some/file.txt
     - inline:
           order: 12
           ansible:
@@ -181,7 +211,7 @@ plans:
                 - name: ensure latest os version
                   apt: upgrade=safe update_cache=yes
 ```
-The sections that begin with *- files:* instruct corrigible to create ansible file copy directives based on the information therein.
+The sections that begin with *- files:* instruct corrigible to create ansible file copy directives based on the information therein. Note that there are two forms. The latter prevents some unnecessary duplicated typing.  *Also, note that, if the **template: yes** line is present, the file will be run through the jinja2 templating engine with the same parameters record that informs the variable substitution in the plan and ansible plan files.*
 
 The sections that begin with *- inline:* are simply copied into the resulting ansible playbook using the indicated order (which defaults to zero if unspecified.
 
