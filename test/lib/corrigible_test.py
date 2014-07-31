@@ -26,7 +26,7 @@ class CorrigibleTest(unittest.TestCase):
         try:
             assert(bool(kwargs['skip_cleanup']))
             call_list.append("--skip-cleanup")
-        except AssertionError:
+        except (AssertionError, KeyError):
             pass
         
         call_list.append("--playbook-output-file={}".format(self.output_playbook_filepath))
