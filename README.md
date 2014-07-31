@@ -211,7 +211,7 @@ plans:
                 - name: ensure latest os version
                   apt: upgrade=safe update_cache=yes
 ```
-The sections that begin with *- files:* instruct corrigible to create ansible file copy directives based on the information therein. Note that there are two forms. The latter prevents some unnecessary duplicated typing.  *Also, note that, if the* **template: yes** *line is present, the file will be run through the jinja2 templating engine with the same parameters record that informs the variable substitution in the plan and ansible plan files.*
+The sections that begin with *- files:* instruct corrigible to create ansible file copy directives based on the information therein. Note that there are two forms. The latter prevents some unnecessary duplicated typing.  *Also, note that, if the* ***template:*** ***yes*** *line is present, the file will be run through the jinja2 templating engine with the same parameters record that informs the variable substitution in the plan and ansible plan files.*
 
 The sections that begin with *- inline:* are simply copied into the resulting ansible playbook using the indicated order (which defaults to zero if unspecified.
 
