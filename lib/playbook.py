@@ -97,10 +97,13 @@ def write_ansible_playbook(opts):
             raise
         
 def _filter_final_playbook_output(raw, opts):
-    as_struct = yaml.load(raw)
-    as_string = yaml.dump(as_struct)    
-    return as_string
-
+    try:
+        as_struct = yaml.load(raw)
+        as_string = yaml.dump(as_struct) 
+        return as_string
+    except yaml.parser.ParserError:
+        print "encountered error parsing playbook output:\n\n{}".format(raw)
+        
 def _playbook_from_list(**kwargs):
     try:
         params = kwargs['parameters']
@@ -358,17 +361,6 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                 if newargstr is not None:
                     arg_strs.append(newargstr)
         try:
-            assert(str(f['template']).lower() in ['yes','true'])
-            
-            # create temp file
-            
-            # write template output to temp file
-            
-            # update 
-            
-        except:
-            pass
-        try:
             assert(len(arg_strs) > 0)
         except AssertionError:
             continue
@@ -441,7 +433,7 @@ def _playbook_from_dict(**kwargs):
         #print "plans({}), parameters({})".format(kwargs['plans'], params)
         
         try:
-            params = _merge_args(params, plans_dict['parameters'])
+            params = _merge_args(plans_dict['parameters'], params)
         except KeyError:
             pass
         
