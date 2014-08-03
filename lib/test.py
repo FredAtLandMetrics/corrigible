@@ -79,7 +79,33 @@ class BaseCorrigibleTest(object):
                 return {key: val}
             except AssertionError:
                 return None
-            
+
+_registered_tests = None
+def update_registered_tests():
+    global _registered_tests
+    package = corrigible.tests
+    for loader, name, ispkg in pkgutil.iter_modules(path=package.__path__):
+        handlers_module = loader.find_module(name).load_module(name)
+        for tester_classname, tester_class in inspect.getmembers(handlers_module, inspect.isclass):
+            if issubclass(tester_class, BaseCorrigibleTest):
+                _registered_tests.append(tester_class)
+                
+def lookup_registered_tester(test_dict):
+    global _registered_tests
+    try:
+        assert(_registered_tests is None)
+        update_registered_tests()
+    except AssertionError:
+        pass
+    
+    for t in _registered_tests:
+        try:
+            assert(t.claim(test_dict))
+            return t
+        except
+            pass
+    return None
+    
 def run_tests(opts):
     system_config_dict = None
     try:
@@ -105,9 +131,7 @@ def _indent_chars(lvl):
         for x in range(0, lvl):
             ret += "  "
     return ret
-    
-def lkpTesterObject(test_dict):
-    
+        
     
 def run_test_dict(test_dict, **kwargs):
     try:
@@ -122,12 +146,29 @@ def run_test_dict(test_dict, **kwargs):
         
     indent_str = _indent_chars(indent_level)
     
-    tester_obj = lkpTesterObject(test_dict)
+    tester_class = lookup_registered_tester(test_dict)
+    tester_obj = tester_class(test_dict)
     
-    print "{}TEST: {}".format(indent_str, test_label)
+    try:
+        assert(tester_obj.run())
+        result = "[OK]"
+        failed = False
+    except AssertionError:
+        result = "[FAIL]"
+        failed = True
+    
+    print "{}TEST: {}".format(indent_str, test_label, result)
+    
+    if failed:
+        print tester_obj.fail_output()
     
 def run_tests_list(tests_list):
     print "Running tests:\n"
     
+    failed = False
+    fail_output = []
     for test_dict in tests_list:
-        run_test_dict(test_dict)
+        try:
+            assert(run_test_dict(test_dict))
+        except AssertionError:
+            failed = True
