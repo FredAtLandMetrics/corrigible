@@ -27,3 +27,6 @@ class MalformedInlineAnsibleSnippet(Exception):
 
 class UnparseablePlanFile(Exception):
     pass
+
+class UnnamedTest(Exception):
+    pass

@@ -23,6 +23,7 @@ from corrigible.lib.planfilestack import plan_file_stack_push, \
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.lib.selector import run_selector_affirmative
 from corrigible.lib.dirpaths import temp_exec_dirpath
+from corrigible.lib.util import merge_hash
 
 jinja2.Environment(autoescape=False)
 
@@ -40,7 +41,7 @@ def ansible_playbook_filepath(opts):
 def run_ansible_playbook(**kwargs):
     
     
-    environ = _merge_args(os.environ,
+    environ = merge_hash(os.environ,
                           { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
                             '/usr/local/sbin' })
     
@@ -142,13 +143,13 @@ def _playbook_from_list(**kwargs):
     except KeyError:
         raise RequiredParameterPlansNotProvided()
    
-def _merge_args(args_base, args_adding):
-    #print "_merge_args: base({}), adding({})".format(args_base, args_adding)
-    ret = copy.copy(args_base)
-    for k,y in args_adding.iteritems():
-        ret[k] = y
-    #print "_merge_args returning {}".format(ret)
-    return ret
+#def merge_hash(args_base, args_adding):
+    ##print "merge_hash: base({}), adding({})".format(args_base, args_adding)
+    #ret = copy.copy(args_base)
+    #for k,y in args_adding.iteritems():
+        #ret[k] = y
+    ##print "merge_hash returning {}".format(ret)
+    #return ret
    
 def _text_from_tuple_list(*args):
     retlist = []
@@ -433,7 +434,7 @@ def _playbook_from_dict(**kwargs):
         #print "plans({}), parameters({})".format(kwargs['plans'], params)
         
         try:
-            params = _merge_args(plans_dict['parameters'], params)
+            params = merge_hash(plans_dict['parameters'], params)
         except KeyError:
             pass
         

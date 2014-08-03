@@ -1,0 +1,27 @@
+hosts:
+    - hostname: 'otherhost'
+      ip_address: 2.3.4.5
+      
+parameters:
+    sudouser: ubuntu
+    sudo: True
+    srcfn: somefile.txt
+    
+plans:
+    - files:
+        - source: {{ srcfn }}
+          destination: /tmp/test_toplevel.txt
+          mode: 0444
+          order: 10
+        - source: /etc/hosts
+          destination: /tmp/hosts.backup
+          mode: 0644
+          order: 10
+
+tests:
+    - name: test that the destination file exists
+      file: path=/tmp/test_toplevel.txt state=present mode=0444
+    - name: test that the hosts backup file exists
+      file: path=/tmp/hosts.backup state=present mode=0444
+      
+      

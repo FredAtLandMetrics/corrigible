@@ -6,6 +6,7 @@ import os
 from corrigible.lib.playbook import write_ansible_playbook, run_ansible_playbook, ansible_playbook_filepath
 from corrigible.lib.hostsfile import write_ansible_hosts, ansible_hostsfile_filepath
 from corrigible.lib.selector import set_run_selectors_list
+from corrigible.lib.tests import run_tests
 
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
@@ -23,7 +24,8 @@ if __name__ == '__main__':
     progargs = ( ( "system", "positional", "the name of the system (or group) whose config will be parsed" ),
                  ( "playbook-output-file", "full", "the playbook output file (for testing, use discouraged)"),
                  ( "hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
-                 ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ),
+                 ( "generate-files-only", "short", "this flag tells corrigible to take no provisioning action, but only generate the files" ),
+                 ( "run-tests-only", "short", "this flag tells corrigible to take no provisioning action and to skip file generation, but only run any tests" ),
                  ( "selectors", "full", "a list of run selectors to be applied to include/exclude plans" ),
                  ( "skip-cleanup", "short", "for development/testing purposes...leaves temp files in place" ) )
     
@@ -53,7 +55,11 @@ if __name__ == '__main__':
     write_ansible_hosts(options)
     write_ansible_playbook(options)
     
-    if not options["generate_files_only"]:
+    if not options["generate_files_only"] and \
+       not options["run_tests_only"]:
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
+        
+    if not options["generate_files_only"]:
+        run_tests(options)
     
