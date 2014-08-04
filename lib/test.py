@@ -39,7 +39,7 @@ class BaseCorrigibleTest(object):
         self._fail_output += str(txt)
         return self._fail_output
     
-    def strToTuple(s, **kwargs):
+    def str_to_tuple(self, s, **kwargs):
         
         try:
             assert(type(s) is str and bool(s))
@@ -59,7 +59,7 @@ class BaseCorrigibleTest(object):
             
         return data
     
-    def strToDict(s, **kwargs):
+    def str_to_dict(self, s, **kwargs):
         try:
             rsep = kwargs['record_separator']
         except KeyError:
@@ -73,14 +73,14 @@ class BaseCorrigibleTest(object):
         try:
             assert(rsep in s)
             ret = {}
-            for kvpair in strToTuple(s, tuple_separator=rsep):
-                key, val = strToTuple(kvpair,tuple_separator=ksep)
+            for kvpair in self.str_to_tuple(s, tuple_separator=rsep):
+                key, val = self.str_to_tuple(kvpair,tuple_separator=ksep)
                 ret[key] = val
             return ret
         except AssertionError:
             try:
                 assert(ksep in s)
-                key, val = strToTuple(s,tuple_separator=ksep)
+                key, val = self.str_to_tuple(s,tuple_separator=ksep)
                 return {key: val}
             except AssertionError:
                 return None

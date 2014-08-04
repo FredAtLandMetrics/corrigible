@@ -36,7 +36,23 @@ class TestBasicSystemTests(CorrigibleTest):
         
     def test_test_registration(self):
         tester = lookup_registered_tester({'file': 'path=/tmp/blah.txt owner=root mode=0400'})
-        self.assertTrue(str(tester.__name__) is FileTest)
-
+        #print "t: {}, {}".format(tester.__name__, tester)
+        self.assertTrue(str(tester.__name__) is 'FileTest')
+        
+    def test_arg_helper_methods(self):
+        tester = lookup_registered_tester({'file': 'path=/tmp/blah.txt owner=root mode=0400'})
+        tester_obj = tester({'file': 'path=/tmp/blah.txt owner=root mode=0400'})
+        tuple_test = tester_obj.str_to_tuple('path=/tmp/blah.txt owner=root mode=0400')
+        self.assertTrue(len(tuple_test) == 3)
+        self.assertTrue('owner=root' in tuple_test)
+        self.assertTrue('path=/tmp/blah.txt' in tuple_test)
+        self.assertTrue('mode=0400' in tuple_test)
+        dict_test = tester_obj.str_to_dict('path=/tmp/blah.txt owner=root mode=0400')
+        self.assertTrue('path' in dict_test)
+        self.assertTrue(dict_test['path'] == '/tmp/blah.txt')
+        self.assertTrue(dict_test['owner'] == 'root')
+        self.assertTrue(dict_test['mode'] == '0400')
+            
+            
 if __name__ == '__main__':
     unittest.main()   
