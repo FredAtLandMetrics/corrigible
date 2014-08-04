@@ -6,6 +6,8 @@ import re
 
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
+from corrigible.lib.test import lookup_registered_tester
+from corrigible.lib.tests.file import FileTest
 
 script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
@@ -32,4 +34,9 @@ class TestBasicSystemTests(CorrigibleTest):
         self.rerun_corrigible(system_config="test_basic_system_tests",
                               generate_files_only=True)
         
-        
+    def test_test_registration(self):
+        tester = lookup_registered_tester({'file': 'path=/tmp/blah.txt owner=root mode=0400'})
+        self.assertTrue(str(tester.__name__) is FileTest)
+
+if __name__ == '__main__':
+    unittest.main()   

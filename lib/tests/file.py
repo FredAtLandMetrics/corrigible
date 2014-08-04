@@ -1,9 +1,9 @@
-from corrigible.lib.tests import BaseCorrigibleTest
+from corrigible.lib.test import BaseCorrigibleTest
 
 class FileTest(BaseCorrigibleTest):
     
     @classmethod
-    def claim(test_dict):
+    def claim(cls, test_dict):
         return ('file' in test_dict)
     
     def run(self):

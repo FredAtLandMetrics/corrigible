@@ -1,9 +1,14 @@
+import pkgutil
+import inspect
+
+import corrigible
+
 from corrigible.lib.exceptions import UnnamedTest
 
 class BaseCorrigibleTest(object):
     
     @classmethod
-    def claim(test_dict):
+    def claim(cls, test_dict):
         return False
     
     def __init__(self, new_test_dict):
@@ -43,7 +48,7 @@ class BaseCorrigibleTest(object):
         
         try:
             tsep = kwargs['tuple_separator']
-        except KeyError
+        except KeyError:
             tsep = ' '
             
         try:
@@ -57,12 +62,12 @@ class BaseCorrigibleTest(object):
     def strToDict(s, **kwargs):
         try:
             rsep = kwargs['record_separator']
-        except KeyError
+        except KeyError:
             rsep = ' '
             
         try:
             ksep = kwargs['keyword_separator']
-        except KeyError
+        except KeyError:
             ksep = '='
             
         try:
@@ -70,7 +75,7 @@ class BaseCorrigibleTest(object):
             ret = {}
             for kvpair in strToTuple(s, tuple_separator=rsep):
                 key, val = strToTuple(kvpair,tuple_separator=ksep)
-                    ret[key] = val
+                ret[key] = val
             return ret
         except AssertionError:
             try:
@@ -83,7 +88,8 @@ class BaseCorrigibleTest(object):
 _registered_tests = None
 def update_registered_tests():
     global _registered_tests
-    package = corrigible.tests
+    _registered_tests = []
+    package = corrigible.lib.tests
     for loader, name, ispkg in pkgutil.iter_modules(path=package.__path__):
         handlers_module = loader.find_module(name).load_module(name)
         for tester_classname, tester_class in inspect.getmembers(handlers_module, inspect.isclass):
@@ -102,7 +108,7 @@ def lookup_registered_tester(test_dict):
         try:
             assert(t.claim(test_dict))
             return t
-        except
+        except AssertionError:
             pass
     return None
     
@@ -122,7 +128,7 @@ def run_tests(opts):
             assert(system_config_dict is None)
             print "ERR: No system config, not writing ansible playbook file"
             return
-        except AssertionError
+        except AssertionError:
             raise
     
 def _indent_chars(lvl):
