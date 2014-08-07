@@ -39,10 +39,13 @@ def ansible_playbook_filepath(opts):
 
 def run_ansible_playbook(**kwargs):
     
-    
-    environ = _merge_args(os.environ,
-                          { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
-                            '/usr/local/sbin' })
+    try:
+        environ = _merge_args(os.environ,
+                            { 'PATH': os.environ["SAFE_CORRIGIBLE_PATH"] })
+    except KeyError:
+        environ = _merge_args(os.environ,
+                            { 'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:' + \
+                                '/usr/local/sbin' })
     
     # so all refs to files can start with 'files/'
     os.chdir(temp_exec_dirpath())
@@ -386,7 +389,9 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     for order_as_str, txt in files.iteritems():
         ret.append((int(order_as_str), txt))
         
-    return ret            
+    print "RET: {}".format(str(ret))
+        
+    return tuple(ret)            
     
     
 def _playbook_from_dict__files_dict(files_dict, params):
