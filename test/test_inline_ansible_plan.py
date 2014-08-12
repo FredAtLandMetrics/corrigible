@@ -35,11 +35,11 @@ class TestInlineAnsiblePlanSystemConfig(CorrigibleTest):
         self.regen()
         s = self.playbook_as_struct()
         tasksrec = {}
-        self.assertTrue(type(s) is list and len(s) > 0)
-        self.assertTrue(type(s[0]) is dict and 'tasks' in s[0])
-        self.assertTrue(type(s[0]['tasks']) is list and len(s[0]['tasks']) > 0)
-        self.assertTrue(type(s[0]['tasks'][0]) is dict)
-        self.assertTrue('apt' in s[0]['tasks'][0])
+        self.assertTrue(type(s) is list and len(s) > 1)
+        self.assertTrue(type(s[1]) is dict and 'tasks' in s[0])
+        self.assertTrue(type(s[1]['tasks']) is list and len(s[0]['tasks']) > 0)
+        self.assertTrue(type(s[1]['tasks'][0]) is dict)
+        self.assertTrue('apt' in s[1]['tasks'][0])
         
         
 if __name__ == '__main__':
