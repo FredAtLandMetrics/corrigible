@@ -67,37 +67,37 @@ class TestComplexSystemConfig(CorrigibleTest):
         # ABOVE CHANGED WITH ADDITION OF FILES PLAN!!!
         
         #    add_deploy_user (04)
-        tasksrec['copy_toplevel_text_file'] = s[0]['tasks'][0]
+        tasksrec['copy_toplevel_text_file'] = s[1]['tasks'][0]
         self.assertTrue('copy' in tasksrec['copy_toplevel_text_file'])
         self.assertTrue(re.search(r'toplevel\.txt',tasksrec['copy_toplevel_text_file']['copy']))
         
-        tasksrec['add_deploy_user'] = s[1]['tasks'][0]
+        tasksrec['add_deploy_user'] = s[2]['tasks'][0]
         self.assertTrue('user' in tasksrec['add_deploy_user'])
         self.assertTrue(tasksrec['add_deploy_user']['name'].strip() == "add deploy user")
         
         #    install_cron (11)
-        tasksrec['install_cron'] = s[2]['tasks'][0]
+        tasksrec['install_cron'] = s[4]['tasks'][0]
         self.assertTrue('cron' in tasksrec['install_cron'])
         self.assertTrue(tasksrec['install_cron']['name'].strip() == "install etc tar cron")
         
         #    apt_upgrade (19)
-        tasksrec['apt_upgrade'] = s[3]['tasks'][0]
+        tasksrec['apt_upgrade'] = s[6]['tasks'][0]
         self.assertTrue('apt' in tasksrec['apt_upgrade'])
         self.assertTrue(tasksrec['apt_upgrade']['name'].strip() == "ensure latest os version")
         
         #    add_misc_users_grp_b (35)
-        tasksrec['add_misc_users_grp_c'] = s[4]['tasks'][0]
+        tasksrec['add_misc_users_grp_c'] = s[8]['tasks'][0]
         self.assertTrue('user' in tasksrec['add_misc_users_grp_c'])
         self.assertTrue(re.search(r'toplevel\.txt',tasksrec['copy_toplevel_text_file']['copy']))
         self.assertTrue(tasksrec['add_misc_users_grp_c']['name'].strip() == "add sara")
 
         # file copy from 57_plans_test.plan.yml
-        tasksrec['copy_some_file'] = s[5]['tasks'][0]
+        tasksrec['copy_some_file'] = s[10]['tasks'][0]
         self.assertTrue('copy' in tasksrec['copy_some_file'])
         self.assertTrue(re.search(r'testfile\.txt',tasksrec['copy_some_file']['copy']))
         
         #    apt_add_packages (81)
-        tasksrec['apt_add_packages'] = s[6]['tasks'][0]
+        tasksrec['apt_add_packages'] = s[11]['tasks'][0]
         self.assertTrue('apt' in tasksrec['apt_add_packages'])
         self.assertTrue(tasksrec['apt_add_packages']['name'].strip() == "install some apt packages")
 
