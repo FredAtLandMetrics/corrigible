@@ -11,10 +11,12 @@ system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
 corrigible_exec_filepath = os.path.join(script_dirpath, '..', 'corrigible')
+hashes_dirpath = '/tmp/corrigible_hashes'
 
 os.environ['CORRIGIBLE_SYSTEMS'] = system_config_dirpath
 os.environ['CORRIGIBLE_PLANS'] = plans_config_dirpath
 os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
+os.environ['CORRIGIBLE_HASHES'] = hashes_dirpath
 
 PLAYBOOK_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-output.yml"
 HOSTS_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
