@@ -1,0 +1,14 @@
+hosts:
+    - hostname: 'thishost'
+      hostgroup: 'thisgroup'
+      ip_address: 127.0.0.1
+
+plans:
+    - inline:
+          order: 100
+          ansible:
+            - hosts: all
+              user: {{ USER }}
+              tasks:
+                - name: touch temp file
+                  shell: touch /tmp/test_local_connect.test.txt

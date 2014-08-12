@@ -20,7 +20,7 @@ class CorrigibleTest(unittest.TestCase):
         try:
             assert(bool(kwargs['generate_files_only']))
             call_list.append("--generate-files-only")
-        except AssertionError:
+        except (AssertionError, KeyError):
             pass
         
         try:
