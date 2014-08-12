@@ -78,7 +78,7 @@ def write_ansible_playbook(opts):
         playbook_output_filepath = ansible_playbook_filepath(opts)
         #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
         #print "plans: {}".format(str(plans))
-        print "params: {}".format(str(params))
+        #print "params: {}".format(str(params))
         try:
             assert(bool(plans))
             #print "cp0"
@@ -115,19 +115,27 @@ def _playbook_hashes_prefix(params):
   user: {}
   sudo: True
   tasks:
-    - name: create hashes dir
+    - name: ensure hashes dir exists
       file: state=directory path={}
+    - name: write listing of hashes dir to file
+      shell: /bin/ls {} > /tmp/corrigible_hashes_list_remote
+    - name: fetch the hashes files list
+      fetch: src=/tmp/corrigible_hashes_list_remote dest=/tmp/corrigible_hashes_list flat=yes
        
-        """.format(params['sudouser'], hashes_dirpath())
+        """.format(params['sudouser'], hashes_dirpath(), hashes_dirpath())
         return ret
     except KeyError:
         ret = """
 - hosts: all
   tasks:
-    - name: create hashes dir
+    - name: ensure hashes dir exists
       file: state=directory path={}
+    - name: write listing of hashes dir to file
+      shell: /bin/ls {} > /tmp/corrigible_hashes_list_remote
+    - name: fetch the hashes files list
+      fetch: src=/tmp/corrigible_hashes_list_remote dest=/tmp/corrigible_hashes_list flat=yes
        
-        """.format(hashes_dirpath())
+        """.format(hashes_dirpath(), hashes_dirpath())
         return ret
         
 def _filter_final_playbook_output(raw, opts):
@@ -228,9 +236,7 @@ def _playbook_from_dict__plan(plan_name, params):
             raw_yaml_str = fh.read()
             try:
                 assert(params is not None and type(params) is dict and bool(params))
-                #print "here1!"
                 pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
-                #print "here2!"
                 template_render_params = copy.copy(params)
             except AssertionError:
                 pass1_rendered_yaml_str = Template(raw_yaml_str).render()
@@ -271,18 +277,6 @@ def _playbook_from_dict__plan(plan_name, params):
                     return [(plan_ndx, "{}\n{}\n".format(pass2_rendered_yaml_str,_touch_hash_stanza_suffix(plan_name)))]
                 except AssertionError:
                     raise UnparseablePlanFile()
-            #if type(yaml_struct) is list and len(yaml_struct) == 1:
-                #yaml_struct = yaml_struct[0]
-            #print "yaml_struct: {}".format(yaml_struct)
-                
-            #if 'plans' in yaml_struct.keys() or \
-                #'files' in yaml_struct.keys():
-                ##print "calling with yaml struct"
-                #_, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
-                #return [(plan_ndx, "{}\n".format(plan_text))]
-            #else:
-                #return [(plan_ndx, "{}\n".format(pass2_rendered_yaml_str))]
-            ##return (plan_index, template_text)
     except TypeError:
         raise PlanFileDoesNotExist(plan_name)
     except UnknownPlanEncountered:
@@ -441,12 +435,9 @@ def _playbook_from_dict__files_dict(files_dict, params):
         assert("list" in files_dict)
     except AssertionError:
         raise FilesDictLacksListKey()
-    #print "cp1"
     try:
-        #print "cp2"
         assert("parameters" in files_dict and bool(files_dict["parameters"]))
         files_params = files_dict["parameters"]
-        #print "cp3"
         return _playbook_from_dict__files_list(files_dict["list"], params, **files_params)
     except AssertionError:
         return _playbook_from_dict__files_list(files_dict["list"], params)

@@ -29,6 +29,12 @@ class CorrigibleTest(unittest.TestCase):
         except (AssertionError, KeyError):
             pass
         
+        try:
+            assert(bool(kwargs['rocket_mode']))
+            call_list.append("--rocket-mode")
+        except (AssertionError, KeyError):
+            pass
+        
         call_list.append("--playbook-output-file={}".format(self.output_playbook_filepath))
         call_list.append("--hosts-output-file={}".format(self.output_hostsfile_filepath))
         

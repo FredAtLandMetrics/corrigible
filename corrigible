@@ -25,7 +25,8 @@ if __name__ == '__main__':
                  ( "hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
                  ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ),
                  ( "selectors", "full", "a list of run selectors to be applied to include/exclude plans" ),
-                 ( "skip-cleanup", "short", "for development/testing purposes...leaves temp files in place" ) )
+                 ( "skip-cleanup", "short", "for development/testing purposes...leaves temp files in place" ),
+                 ( "rocket-mode", "short", "rocket past any plans that haven't changed and that have already been executed in the past" ) )
     
     for arginfo in progargs:
         optname, opttype, opthelp = arginfo
