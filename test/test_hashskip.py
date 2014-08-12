@@ -91,9 +91,9 @@ class TestLocalConnectForTesting(CorrigibleTest):
         self.run_playbook()
         self.assertTrue(bool(os.path.isdir(hashes_dirpath)))        
         self.run_rocket_style()
-        #s = self.playbook_as_struct()
-        #self.assertTrue(type(s) is list)
-        #self.assertTrue(len(s) == 1)
+        s = self.playbook_as_struct()
+        self.assertTrue(type(s) is list)
+        self.assertTrue(len(s) == 1)
         
 if __name__ == '__main__':
     unittest.main()   

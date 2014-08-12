@@ -16,7 +16,8 @@ from corrigible.lib.exceptions import PlanFileDoesNotExist, \
                                       FilesSectionEmpty, \
                                       FilesDictLacksListKey, \
                                       NoSudoUserParameterDefined, \
-                                      UnparseablePlanFile
+                                      UnparseablePlanFile, \
+                                      DuplicatePlanInRocketMode
 from corrigible.lib.planfilestack import plan_file_stack_push, \
                                          plan_file_stack_pop, \
                                          plan_file_stack_as_str
@@ -24,7 +25,8 @@ from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.lib.selector import run_selector_affirmative
 from corrigible.lib.dirpaths import temp_exec_dirpath, hashes_dirpath
 from corrigible.lib.sys_default_params import sys_default_parameters
-from corrigible.lib.planhash import plan_hash_filepath
+from corrigible.lib.planhash import plan_hash_filepath, plan_hash_filepath_exists
+from corrigible.lib.rocketmode import rocket_mode
 
 jinja2.Environment(autoescape=False)
 
@@ -56,7 +58,49 @@ def run_ansible_playbook(**kwargs):
                      '-i', kwargs['hosts_filepath'],
                      kwargs['playbook_filepath']], env=environ)
 
-
+def run_hashes_fetch_playbook(opts):
+    _write_hashses_fetch_playbook(opts)
+    
+def _write_hashses_fetch_playbook(opts):
+    mconf = None
+    try:
+        mconf = system_config(opts)
+        
+        try:
+            plans = mconf['plans']
+        except KeyError:
+            plans = {}
+            
+        try:
+            params = mconf['parameters']
+        except KeyError:
+            params = {}
+            
+        params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
+            
+        playbook_output_filepath = ansible_playbook_filepath(opts)
+        
+        try:
+            assert(bool(plans))
+            #print "cp0"
+            with open(ansible_playbook_filepath(opts), "w") as fh:
+                #print "cp1"
+                order, playbook_output = _playbook_from_list( plans=plans, parameters=params )
+                #print "cp2"
+                playbook_output = _playbook_hashes_prefix(params, fetch_hashes=True)
+                fh.write(playbook_output)
+        except PlanFileDoesNotExist as e:
+            print "ERR: plan referenced for which no file was found: {}, stack: {}".format(str(e), plan_file_stack_as_str())
+        except AssertionError:
+            print "WARN: no plans defined!"
+    except TypeError:
+        #print "system_config: {}".format(str(mconf))
+        if mconf is None:
+            print "ERR: No system config, not writing ansible playbook file"
+            return
+        else:
+            raise
+    
 
 def write_ansible_playbook(opts):
     mconf = None
@@ -86,11 +130,17 @@ def write_ansible_playbook(opts):
                 #print "cp1"
                 order, playbook_output = _playbook_from_list( plans=plans, parameters=params )
                 #print "cp2"
-                playbook_output = "{}\n{}".format(
-                    _playbook_hashes_prefix(params),
-                    _filter_final_playbook_output(playbook_output, opts)
-                )
                 
+                try:
+                    filtered_output = _filter_final_playbook_output(playbook_output, opts)
+                    assert(type(filtered_output) is str and bool(filtered_output))
+                    playbook_output = "{}\n{}".format(
+                        _playbook_hashes_prefix(params),
+                        filtered_output
+                    )
+                except AssertionError:
+                    playbook_output = _playbook_hashes_prefix(params)
+                    
                 if bool(playbook_output):
                     fh.write(playbook_output)
                 else:
@@ -108,7 +158,19 @@ def write_ansible_playbook(opts):
         else:
             raise
 
-def _playbook_hashes_prefix(params):
+def _playbook_hashes_prefix(params, **kwargs):
+    
+    try:
+        assert(bool(kwargs['fetch_hashes']))
+        fetch_hashes_str = """
+    - name: write listing of hashes dir to file
+      shell: /bin/ls {} > /tmp/corrigible_hashes_list_remote
+    - name: fetch the hashes files list
+      fetch: src=/tmp/corrigible_hashes_list_remote dest=/tmp/corrigible_hashes_list flat=yes
+        """.format(hashes_dirpath())
+    except (AssertionError, KeyError):
+        fetch_hashes_str = ""
+    
     try:
         ret = """
 - hosts: all
@@ -117,12 +179,8 @@ def _playbook_hashes_prefix(params):
   tasks:
     - name: ensure hashes dir exists
       file: state=directory path={}
-    - name: write listing of hashes dir to file
-      shell: /bin/ls {} > /tmp/corrigible_hashes_list_remote
-    - name: fetch the hashes files list
-      fetch: src=/tmp/corrigible_hashes_list_remote dest=/tmp/corrigible_hashes_list flat=yes
-       
-        """.format(params['sudouser'], hashes_dirpath(), hashes_dirpath())
+      {}
+        """.format(params['sudouser'], hashes_dirpath(), fetch_hashes_str)
         return ret
     except KeyError:
         ret = """
@@ -130,21 +188,20 @@ def _playbook_hashes_prefix(params):
   tasks:
     - name: ensure hashes dir exists
       file: state=directory path={}
-    - name: write listing of hashes dir to file
-      shell: /bin/ls {} > /tmp/corrigible_hashes_list_remote
-    - name: fetch the hashes files list
-      fetch: src=/tmp/corrigible_hashes_list_remote dest=/tmp/corrigible_hashes_list flat=yes
-       
-        """.format(hashes_dirpath(), hashes_dirpath())
+      {}       
+        """.format(hashes_dirpath(), fetch_hashes_str)
         return ret
         
 def _filter_final_playbook_output(raw, opts):
     try:
+        assert(type(raw) is str and bool(raw))
         as_struct = yaml.load(raw)
         as_string = yaml.dump(as_struct) 
         return as_string
     except yaml.parser.ParserError:
-        print "encountered error parsing playbook output:\n\n{}".format(raw)
+        print "ERR: encountered error parsing playbook output:\n\n{}".format(raw)
+    except AssertionError:
+        print "INFO: no playbook output to filter"
         
 def _playbook_from_list(**kwargs):
     try:
@@ -170,7 +227,7 @@ def _playbook_from_list(**kwargs):
             try:
                 playbook_text_tuple_list.append(_playbook_from_dict(plans=plans_dict,
                                                                     parameters=params))
-            except PlanOmittedByRunSelector:
+            except (PlanOmittedByRunSelector, DuplicatePlanInRocketMode):
                 pass
             
             if dopop:
@@ -221,6 +278,9 @@ def _touch_hash_stanza_suffix(plan_name):
     return ret
       
 def _playbook_from_dict__plan(plan_name, params):      
+    
+    if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
+        raise DuplicatePlanInRocketMode()
     
     plan_ndx = plan_index(plan_name)
     plan_path = plan_filepath(plan_name)

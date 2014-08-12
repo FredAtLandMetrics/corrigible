@@ -23,4 +23,16 @@ def plan_hash_filepath(**kwargs):
             return os.path.join(hashes_dirpath(),"{}.{}".format(os.path.basename(p_filepath), plan_hash_str(p_filepath)))
         except KeyError:
             return None
-        
+   
+_hash_filepaths = None
+def plan_hash_filepath_exists(**kwargs):
+    global _hash_filepaths
+    if _hash_filepaths is None:
+        print "DBG: hash file paths is none, rebuilding from file"
+        with open('/tmp/corrigible_hashes_list', 'rb') as fh:
+            _hash_filepaths = fh.read().split('\n')
+            print "DBG: filepaths list: {}".format(_hash_filepaths)
+    ret = os.path.basename(plan_hash_filepath(plan=kwargs['plan'])) in _hash_filepaths
+    print "DBG: plan_hash_filepath_exists(plan={}) returning {}".format(kwargs['plan'],ret)
+    return ret
+    #return os.path.isfile(plan_hash_filepath(**kwargs))
