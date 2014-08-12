@@ -36,11 +36,11 @@ class TestTemplateFiles(CorrigibleTest):
         self.regen()
         s = self.playbook_as_struct()
         self.assertTrue(type(s) is list and len(s) > 0)
-        self.assertTrue(type(s[0]) is dict)
-        self.assertTrue('tasks' in s[0])
-        self.assertTrue(type(s[0]['tasks']) is list and len(s[0]['tasks']) > 0)
-        self.assertTrue(type(s[0]['tasks'][0]) is dict)
-        copy_dict = s[0]['tasks'][0]
+        self.assertTrue(type(s[1]) is dict)
+        self.assertTrue('tasks' in s[1])
+        self.assertTrue(type(s[1]['tasks']) is list and len(s[1]['tasks']) > 0)
+        self.assertTrue(type(s[1]['tasks'][0]) is dict)
+        copy_dict = s[1]['tasks'][0]
         self.assertTrue('copy' in copy_dict)
         copy_directive_str = copy_dict['copy']
         m = re.match(r'src\=([^\s]+)', copy_directive_str)
