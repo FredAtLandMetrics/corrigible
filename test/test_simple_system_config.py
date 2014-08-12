@@ -80,18 +80,18 @@ class TestSimpleSystemConfig(CorrigibleTest):
         self.assertTrue(os.path.isfile(self.output_playbook_filepath))
         self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         s = self.playbook_as_struct()
-        self.assertTrue('user' in s[1]['tasks'][0])
-        self.assertFalse('user' in s[2]['tasks'][0])
-        self.assertFalse('user' in s[3]['tasks'][0])
-        self.assertTrue('cron' in s[2]['tasks'][0])
-        self.assertFalse('cron' in s[1]['tasks'][0])
-        self.assertFalse('cron' in s[3]['tasks'][0])
-        self.assertTrue('apt' in s[3]['tasks'][0])
+        self.assertTrue('user' in s[2]['tasks'][0])
+        self.assertFalse('user' in s[4]['tasks'][0])
+        self.assertFalse('user' in s[6]['tasks'][0])
+        self.assertTrue('cron' in s[4]['tasks'][0])
+        self.assertFalse('cron' in s[2]['tasks'][0])
+        self.assertFalse('cron' in s[6]['tasks'][0])
+        self.assertTrue('apt' in s[6]['tasks'][0])
+        self.assertFalse('apt' in s[4]['tasks'][0])
         self.assertFalse('apt' in s[2]['tasks'][0])
-        self.assertFalse('apt' in s[1]['tasks'][0])
         
         # files
-        self.assertTrue('copy' in s[0]['tasks'][0])
+        self.assertTrue('copy' in s[1]['tasks'][0])
 
 if __name__ == '__main__':
     unittest.main()   
