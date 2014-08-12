@@ -4,7 +4,7 @@ hosts:
       ip_address: 127.0.0.1
 
 parameters:
-  sudouser: {{ system_local_user }}
+  sudouser: {{ sys_local_user }}
   sudo: yes
   
 plans:

@@ -23,6 +23,7 @@ from corrigible.lib.planfilestack import plan_file_stack_push, \
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.lib.selector import run_selector_affirmative
 from corrigible.lib.dirpaths import temp_exec_dirpath
+from corrigible.lib.sys_default_params import sys_default_parameters
 
 jinja2.Environment(autoescape=False)
 
@@ -55,6 +56,7 @@ def run_ansible_playbook(**kwargs):
                      kwargs['playbook_filepath']], env=environ)
 
 
+
 def write_ansible_playbook(opts):
     mconf = None
     try:
@@ -70,9 +72,12 @@ def write_ansible_playbook(opts):
         except KeyError:
             params = {}
             
+        params = dict(params.items() + sys_default_parameters().items())
+            
         playbook_output_filepath = ansible_playbook_filepath(opts)
         #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
         #print "plans: {}".format(str(plans))
+        print "params: {}".format(str(params))
         try:
             assert(bool(plans))
             #print "cp0"

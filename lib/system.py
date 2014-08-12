@@ -7,6 +7,7 @@ from jinja2 import Template
 from corrigible.lib.planfilestack import plan_file_stack_push
 from corrigible.lib.dirpaths import systems_dirpath
 from corrigible.lib.selector import run_selector_affirmative
+from corrigible.lib.sys_default_params import sys_default_parameters
 
 SYSTEM_FILE_SUFFIX = "system"
 
@@ -21,9 +22,11 @@ def system_config(opts):
             print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath)
             with open (system_config_filepath, "r") as system_def_fh: 
                 
+                params = dict(sys_default_parameters().items() + os.environ.items())
+                
                 unrendered_system_def_str = system_def_fh.read()
                 pass1_rendered_system_def_str = \
-                    Template(unrendered_system_def_str).render(**os.environ)
+                    Template(unrendered_system_def_str).render(**params)
                 
                 #print "pass1: {}".format(pass1_rendered_system_def_str)
                 
@@ -40,11 +43,12 @@ def system_config(opts):
                 # merge in parameters (with os.environ trumping parameters)
                 try:
                     assert(parameter_dict is None)
-                    render_params = os.environ
+                    render_params = params
                 except AssertionError:
-                    render_params = copy.copy(parameter_dict)
-                    for key, val in os.environ.iteritems():
-                        render_params[key] = val
+                    render_params = dict(parameter_dict.items() + os.environ.items() + sys_default_parameters().items())
+                    #render_params = copy.copy(parameter_dict)
+                    #for key, val in os.environ.iteritems():
+                        #render_params[key] = val
                         
                 # final system config load
                 pass2_rendered_system_def_str = \
