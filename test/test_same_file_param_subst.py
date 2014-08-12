@@ -36,22 +36,22 @@ class TestSameFileParamSubst(CorrigibleTest):
         s = self.playbook_as_struct()
         
         self.assertTrue(type(s) is list and len(s) > 0)
-        self.assertTrue(type(s[0]) is dict)
-        self.assertTrue('tasks' in s[0] and type(s[0]['tasks']) is list and len(s[0]['tasks']) > 0)
-        self.assertTrue(type(s[0]['tasks'][0]) is dict)
-        self.assertTrue('copy' in s[0]['tasks'][0])
-        self.assertTrue('somefile.txt' in str(s[0]['tasks'][0]['copy']))
+        self.assertTrue(type(s[1]) is dict)
+        self.assertTrue('tasks' in s[1] and type(s[1]['tasks']) is list and len(s[1]['tasks']) > 0)
+        self.assertTrue(type(s[1]['tasks'][0]) is dict)
+        self.assertTrue('copy' in s[1]['tasks'][0])
+        self.assertTrue('somefile.txt' in str(s[1]['tasks'][0]['copy']))
         
     def test_same_file_param_subst_in_plan_file(self):
         self.regen()
         s = self.playbook_as_struct()
         
         self.assertTrue(type(s) is list and len(s) > 0)
-        self.assertTrue(type(s[1]) is dict)
-        self.assertTrue('tasks' in s[1] and type(s[1]['tasks']) is list and len(s[1]['tasks']) > 0)
-        self.assertTrue(type(s[1]['tasks'][0]) is dict)
-        self.assertTrue('copy' in s[1]['tasks'][0])
-        self.assertTrue('blahfn.txt' in str(s[1]['tasks'][0]['copy']))
+        self.assertTrue(type(s[2]) is dict)
+        self.assertTrue('tasks' in s[2] and type(s[2]['tasks']) is list and len(s[2]['tasks']) > 0)
+        self.assertTrue(type(s[2]['tasks'][0]) is dict)
+        self.assertTrue('copy' in s[2]['tasks'][0])
+        self.assertTrue('blahfn.txt' in str(s[2]['tasks'][0]['copy']))
         
 
 if __name__ == '__main__':
