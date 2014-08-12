@@ -35,13 +35,13 @@ class TestSimpleSystemConfig(CorrigibleTest):
         self.regen()
         s = self.playbook_as_struct()
         tasksrec = {}
-        tasksrec['apt_upgrade'] = s[0]['tasks'][0]
+        tasksrec['apt_upgrade'] = s[1]['tasks'][0]
         self.assertTrue('apt' in tasksrec['apt_upgrade'])
         self.assertTrue(tasksrec['apt_upgrade']['name'].strip() == "ensure latest os version")
-        tasksrec['add_users1'] = s[1]['tasks'][0]
+        tasksrec['add_users1'] = s[3]['tasks'][0]
         self.assertTrue('user' in tasksrec['add_users1'])
         self.assertTrue(tasksrec['add_users1']['name'].strip() == "add rover")
-        tasksrec['add_users2'] = s[1]['tasks'][1]
+        tasksrec['add_users2'] = s[3]['tasks'][1]
         self.assertTrue('user' in tasksrec['add_users2'])
         self.assertTrue(tasksrec['add_users2']['name'].strip() == "add fido")
 
