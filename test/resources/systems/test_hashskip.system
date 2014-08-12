@@ -1,0 +1,9 @@
+hosts:
+    - hostname: 'thishost'
+      hostgroup: 'thisgroup'
+      ip_address: 127.0.0.1
+
+plans:
+    - plan: hashskip_ansible_plan
+    - plan: hashskip_plan_plan
+    

@@ -1,0 +1,5 @@
+- hosts: all
+  user: {{ USER }}
+  tasks:
+    - name: touch temp file
+      shell: touch /tmp/test_hashskip_ansible.test.txt

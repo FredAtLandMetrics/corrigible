@@ -1,0 +1,9 @@
+plans:
+  - inline:
+      order: 100
+      ansible:
+        - hosts: all
+          user: {{ USER }}
+          tasks:
+            - name: touch temp file
+              shell: touch /tmp/test_hashskip_plan.test.txt

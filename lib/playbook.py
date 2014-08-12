@@ -22,8 +22,9 @@ from corrigible.lib.planfilestack import plan_file_stack_push, \
                                          plan_file_stack_as_str
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.lib.selector import run_selector_affirmative
-from corrigible.lib.dirpaths import temp_exec_dirpath
+from corrigible.lib.dirpaths import temp_exec_dirpath, hashes_dirpath
 from corrigible.lib.sys_default_params import sys_default_parameters
+from corrigible.lib.planhash import plan_hash_filepath
 
 jinja2.Environment(autoescape=False)
 
@@ -72,7 +73,7 @@ def write_ansible_playbook(opts):
         except KeyError:
             params = {}
             
-        params = dict(params.items() + sys_default_parameters().items())
+        params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
             
         playbook_output_filepath = ansible_playbook_filepath(opts)
         #print "INFO: writing ansible playbook data to {}".format(playbook_output_filepath)
@@ -85,7 +86,10 @@ def write_ansible_playbook(opts):
                 #print "cp1"
                 order, playbook_output = _playbook_from_list( plans=plans, parameters=params )
                 #print "cp2"
-                playbook_output = _filter_final_playbook_output(playbook_output, opts)
+                playbook_output = "{}\n{}".format(
+                    _playbook_hashes_prefix(params),
+                    _filter_final_playbook_output(playbook_output, opts)
+                )
                 
                 if bool(playbook_output):
                     fh.write(playbook_output)
@@ -103,6 +107,28 @@ def write_ansible_playbook(opts):
             return
         else:
             raise
+
+def _playbook_hashes_prefix(params):
+    try:
+        ret = """
+- hosts: all
+  user: {}
+  sudo: True
+  tasks:
+    - name: create hashes dir
+      file: state=directory path={}
+       
+        """.format(params['sudouser'], hashes_dirpath())
+        return ret
+    except KeyError:
+        ret = """
+- hosts: all
+  tasks:
+    - name: create hashes dir
+      file: state=directory path={}
+       
+        """.format(hashes_dirpath())
+        return ret
         
 def _filter_final_playbook_output(raw, opts):
     try:
@@ -152,10 +178,11 @@ def _playbook_from_list(**kwargs):
    
 def _merge_args(args_base, args_adding):
     #print "_merge_args: base({}), adding({})".format(args_base, args_adding)
-    ret = copy.copy(args_base)
-    for k,y in args_adding.iteritems():
-        ret[k] = y
+    #ret = copy.copy(args_base)
+    #for k,y in args_adding.iteritems():
+        #ret[k] = y
     #print "_merge_args returning {}".format(ret)
+    ret = dict(args_base.items() + args_adding.items())
     return ret
    
 def _text_from_tuple_list(*args):
@@ -173,6 +200,16 @@ def _text_from_tuple_list(*args):
     if not bool(ret):
         return None
         
+    return ret
+      
+def _touch_hash_stanza_suffix(plan_name):
+    ret = """
+- hosts: all
+  tasks:
+    - name: touch plan hash file
+      shell: touch {}
+    
+    """.format(plan_hash_filepath(plan=plan_name))
     return ret
       
 def _playbook_from_dict__plan(plan_name, params):      
@@ -227,11 +264,11 @@ def _playbook_from_dict__plan(plan_name, params):
             try:
                 assert(type(yaml_struct) is dict and 'plans' in yaml_struct)
                 _, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
-                return [(plan_ndx, "{}\n".format(plan_text))]
+                return [(plan_ndx, "{}\n{}\n".format(plan_text,_touch_hash_stanza_suffix(plan_name)))]
             except AssertionError:
                 try:
                     assert(type(yaml_struct) is list and len(yaml_struct) > 0)
-                    return [(plan_ndx, "{}\n".format(pass2_rendered_yaml_str))]
+                    return [(plan_ndx, "{}\n{}\n".format(pass2_rendered_yaml_str,_touch_hash_stanza_suffix(plan_name)))]
                 except AssertionError:
                     raise UnparseablePlanFile()
             #if type(yaml_struct) is list and len(yaml_struct) == 1:

@@ -22,6 +22,13 @@ def files_dirpath():
 def corrigible_path():
     return envvar_cap_var('CORRIGIBLE_PATH',default='/usr/local/etc/corrigible')
 
+def hashes_dirpath():
+    try:
+        return os.environ['CORRIGIBLE_HASHES']
+    except KeyError:
+        return "/corrigible/hashes"
+
+
 _temp_exec_dir = None
 def temp_exec_dirpath():
     global _temp_exec_dir
