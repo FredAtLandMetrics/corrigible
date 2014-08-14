@@ -280,7 +280,7 @@ def _touch_hash_stanza_suffix(plan_name, params):
     - name: touch plan hash file
       shell: touch {}
         
-        """.format(params['sudouser'], plan_hash_filepath(plan=plan_name))
+        """.format(params['rootuser'], plan_hash_filepath(plan=plan_name))
     except KeyError:
         ret = """
 - hosts: all
