@@ -160,6 +160,8 @@ def write_ansible_playbook(opts):
 
 def _playbook_hashes_prefix(params, **kwargs):
     
+    print "DBG: params: {}".format(params)
+    
     try:
         assert(bool(kwargs['fetch_hashes']))
         fetch_hashes_str = """
@@ -180,7 +182,7 @@ def _playbook_hashes_prefix(params, **kwargs):
     - name: ensure hashes dir exists
       file: state=directory path={}
       {}
-        """.format(params['sudouser'], hashes_dirpath(), fetch_hashes_str)
+        """.format(params['rootuser'], hashes_dirpath(), fetch_hashes_str)
         return ret
     except KeyError:
         ret = """
@@ -267,14 +269,26 @@ def _text_from_tuple_list(*args):
         
     return ret
       
-def _touch_hash_stanza_suffix(plan_name):
-    ret = """
+def _touch_hash_stanza_suffix(plan_name, params):
+    try:
+        
+        ret = """
+- hosts: all
+  user: {}
+  sudo: yes
+  tasks:
+    - name: touch plan hash file
+      shell: touch {}
+        
+        """.format(params['sudouser'], plan_hash_filepath(plan=plan_name))
+    except KeyError:
+        ret = """
 - hosts: all
   tasks:
     - name: touch plan hash file
       shell: touch {}
-    
-    """.format(plan_hash_filepath(plan=plan_name))
+        
+        """.format(plan_hash_filepath(plan=plan_name))
     return ret
       
 def _playbook_from_dict__plan(plan_name, params):      
@@ -330,11 +344,11 @@ def _playbook_from_dict__plan(plan_name, params):
             try:
                 assert(type(yaml_struct) is dict and 'plans' in yaml_struct)
                 _, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
-                return [(plan_ndx, "{}\n{}\n".format(plan_text,_touch_hash_stanza_suffix(plan_name)))]
+                return [(plan_ndx, "{}\n{}\n".format(plan_text,_touch_hash_stanza_suffix(plan_name, params)))]
             except AssertionError:
                 try:
                     assert(type(yaml_struct) is list and len(yaml_struct) > 0)
-                    return [(plan_ndx, "{}\n{}\n".format(pass2_rendered_yaml_str,_touch_hash_stanza_suffix(plan_name)))]
+                    return [(plan_ndx, "{}\n{}\n".format(pass2_rendered_yaml_str,_touch_hash_stanza_suffix(plan_name, params)))]
                 except AssertionError:
                     raise UnparseablePlanFile()
     except TypeError:
