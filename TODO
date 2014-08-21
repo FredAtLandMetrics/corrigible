@@ -9,8 +9,8 @@ General TODO
 
 Specific TODO resulting from #1 above
 =====================================
-1) I'd like it if the hosts line was optional in the ansible stanzas (NOTE: it might actually be...need to test it)
-2) Files section should have a way to do parameter substitution in transferred files
+1) rocket mode is currently a little broken.  What needs to happen is that, when it is determined that a given plan needs to run, corrigible needs to remove the calling plan from the hashed list otherwise a changed plan three, four or five layers deep will never get called.
+2) I'd like it if the hosts line was optional in the ansible stanzas (NOTE: it might actually be...need to test it)
 
 Tests
 =====
