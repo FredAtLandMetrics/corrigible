@@ -128,23 +128,29 @@ def write_ansible_playbook(opts):
             #print "cp0"
             with open(ansible_playbook_filepath(opts), "w") as fh:
                 #print "cp1"
-                order, playbook_output = _playbook_from_list( plans=plans, parameters=params )
-                #print "cp2"
-                
+                list_output = _playbook_from_list( plans=plans, parameters=params )
+                playbook_output = ""
                 try:
-                    filtered_output = _filter_final_playbook_output(playbook_output, opts)
-                    assert(type(filtered_output) is str and bool(filtered_output))
-                    playbook_output = "{}\n{}".format(
-                        _playbook_hashes_prefix(params),
-                        filtered_output
-                    )
-                except AssertionError:
-                    playbook_output = _playbook_hashes_prefix(params)
+                    assert(list_output is not None)
+                    order, playbook_output = list_output
+                    #print "cp2"
+                
+                    try:
+                        filtered_output = _filter_final_playbook_output(playbook_output, opts)
+                        assert(type(filtered_output) is str and bool(filtered_output))
+                        playbook_output = "{}\n{}".format(
+                            _playbook_hashes_prefix(params),
+                            filtered_output
+                        )
+                    except AssertionError:
+                        playbook_output = _playbook_hashes_prefix(params)
                     
-                if bool(playbook_output):
-                    fh.write(playbook_output)
-                else:
-                    fh.write("# WARN: No plans found!\n")
+                    if bool(playbook_output):
+                        fh.write(playbook_output)
+                    else:
+                        fh.write("# WARN: No plans found!\n")
+                except AssertionError:
+                    fh.write("# WARN: No playbook output!\n")
         except PlanFileDoesNotExist as e:
             print "ERR: plan referenced for which no file was found: {}, stack: {}".format(str(e), plan_file_stack_as_str())
         except AssertionError:
@@ -200,8 +206,8 @@ def _filter_final_playbook_output(raw, opts):
         as_struct = yaml.load(raw)
         as_string = yaml.dump(as_struct) 
         return as_string
-    except yaml.parser.ParserError:
-        print "ERR: encountered error parsing playbook output:\n\n{}".format(raw)
+    except (yaml.parser.ParserError, yaml.scanner.ScannerError) as e:
+        print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw)
     except AssertionError:
         print "INFO: no playbook output to filter"
         
@@ -227,8 +233,13 @@ def _playbook_from_list(**kwargs):
                 dopop = True
             
             try:
-                playbook_text_tuple_list.append(_playbook_from_dict(plans=plans_dict,
-                                                                    parameters=params))
+                playbook_dict_tuple = _playbook_from_dict(plans=plans_dict,
+                                                          parameters=params)
+                try:
+                    assert(playbook_dict_tuple is not None)
+                    playbook_text_tuple_list.append(playbook_dict_tuple)
+                except AssertionError:
+                    pass
             except (PlanOmittedByRunSelector, DuplicatePlanInRocketMode):
                 pass
             
@@ -237,9 +248,12 @@ def _playbook_from_list(**kwargs):
                 
         ret = _text_from_tuple_list(*playbook_text_tuple_list)
         
+        try:
+            assert(ret is not None)
         
-        
-        return (MAX_PLAN_ORDER, ret)
+            return (MAX_PLAN_ORDER, ret)
+        except AssertionError:
+            return None
     except KeyError:
         raise RequiredParameterPlansNotProvided()
    
@@ -343,8 +357,14 @@ def _playbook_from_dict__plan(plan_name, params):
             # so, now it's either a rendered ansible yml or a rendered plan yml
             try:
                 assert(type(yaml_struct) is dict and 'plans' in yaml_struct)
-                _, plan_text =  _playbook_from_dict(plans=yaml_struct, parameters=params)
-                return [(plan_ndx, "{}\n{}\n".format(plan_text,_touch_hash_stanza_suffix(plan_name, params)))]
+                
+                playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params)
+                try:
+                    assert(playbook_dict_output is not None)
+                    _, plan_text = playbook_dict_output
+                    return [(plan_ndx, "{}\n{}\n".format(plan_text,_touch_hash_stanza_suffix(plan_name, params)))]
+                except AssertionError:
+                    return None
             except AssertionError:
                 try:
                     assert(type(yaml_struct) is list and len(yaml_struct) > 0)
@@ -578,7 +598,7 @@ def _playbook_from_dict(**kwargs):
                     
                     try:
                         
-                        
+                        print "plans dict: {}".format(plans_dict)
                         inline_snippet_container = plans_dict['inline']
                         try:
                             assert('ansible' in inline_snippet_container)
