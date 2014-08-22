@@ -11,6 +11,7 @@ Specific TODO resulting from #1 above
 =====================================
 1) rocket mode is currently a little broken.  What needs to happen is that, when it is determined that a given plan needs to run, corrigible needs to remove the calling plan from the hashed list otherwise a changed plan three, four or five layers deep will never get called.
 2) I'd like it if the hosts line was optional in the ansible stanzas (NOTE: it might actually be...need to test it)
+3) Sometimes I'm finding that it's not always easy to figure out exactly where things are going wrong.  I don't think it's necessarily worse than the problems you have with ansible, but it's not much better either.  A lot of the problems I end up having involve ordering plans.  The fix is always to set the prefix number on some plan file, but figuring out which one can be tricky.  So I'd like a utiltity called corrigible_tree that would print the plan execution tree.
 
 Tests
 =====
