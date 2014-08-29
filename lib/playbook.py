@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import jinja2
 import yaml
 import heapq
@@ -408,7 +410,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     
     files = {}
     for f in files_list:
-        #print "f: {}".format(f)
+        print "f: {}".format(f)
         arg_strs = []
         for arg_tuple in arg_data:
             
@@ -430,6 +432,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                                ('template' in f and _str_bool(f['template'])))
                         
                         # HERE!!!
+                        print "Got Template...params: {}".format(params)
                         with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
                             raw_template_contents_str = sfh.read()
                             fh, filepath = tempfile.mkstemp()
@@ -466,7 +469,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                             
                             # HERE!!!
                             with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
-                                raw_template_contents_str = sfh.read()
+                                raw_template_contents_str = sfh.read().encode('utf-8','ignore')
                                 fh, filepath = tempfile.mkstemp()
                                 with open(filepath, 'w') as dfh:
                                     dfh.write(Template(raw_template_contents_str).render(params))
