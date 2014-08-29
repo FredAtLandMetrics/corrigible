@@ -102,8 +102,14 @@ def _write_hashses_fetch_playbook(opts):
             return
         else:
             raise
-    
 
+_snippet_tuples = []
+def _append_snippet_tuple(t):
+    if type(t) is not list:
+        t = [t]
+    for tup in t:
+        _snippet_tuples.append(tup)
+    
 def write_ansible_playbook(opts):
     mconf = None
     try:
@@ -220,6 +226,11 @@ def _playbook_from_list(**kwargs):
         params = {}
     
     try:
+        call_depth = kwargs['call_depth']
+    except KeyError:
+        call_depth = 0
+    
+    try:
         retlist= []
         
         #print "plans({}), parameters({})".format(kwargs['plans'], params)
@@ -236,19 +247,21 @@ def _playbook_from_list(**kwargs):
             
             try:
                 playbook_dict_tuple = _playbook_from_dict(plans=plans_dict,
-                                                          parameters=params)
-                try:
-                    assert(playbook_dict_tuple is not None)
-                    playbook_text_tuple_list.append(playbook_dict_tuple)
-                except AssertionError:
-                    pass
-            except (PlanOmittedByRunSelector, DuplicatePlanInRocketMode):
+                                                          parameters=params,
+                                                          call_depth=int(call_depth+1))
+                _append_snippet_tuple(playbook_dict_tuple)
+                #try:
+                    #assert(playbook_dict_tuple is not None)
+                    #playbook_text_tuple_list.append(playbook_dict_tuple)
+                #except AssertionError:
+                    #pass
+            except (PlanOmittedByRunSelector):
                 pass
             
             if dopop:
                 plan_file_stack_pop()
                 
-        ret = _text_from_tuple_list(*playbook_text_tuple_list)
+        #ret = _text_from_tuple_list(*playbook_text_tuple_list)
         
         try:
             assert(ret is not None)
@@ -260,11 +273,6 @@ def _playbook_from_list(**kwargs):
         raise RequiredParameterPlansNotProvided()
    
 def _merge_args(args_base, args_adding):
-    #print "_merge_args: base({}), adding({})".format(args_base, args_adding)
-    #ret = copy.copy(args_base)
-    #for k,y in args_adding.iteritems():
-        #ret[k] = y
-    #print "_merge_args returning {}".format(ret)
     ret = dict(args_base.items() + args_adding.items())
     return ret
    
@@ -360,7 +368,7 @@ def _playbook_from_dict__plan(plan_name, params):
             try:
                 assert(type(yaml_struct) is dict and 'plans' in yaml_struct)
                 
-                playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params)
+                playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params, call_depth=int(call_depth+1))
                 try:
                     assert(playbook_dict_output is not None)
                     _, plan_text = playbook_dict_output
@@ -397,6 +405,11 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     except AssertionError:
         raise NoSudoUserParameterDefined()
     
+    try:
+        call_depth = kwargs['call_depth']
+    except KeyError:
+        call_depth = 0
+        
     tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
     
     output_prefix = '    - copy: '
@@ -532,24 +545,36 @@ def _playbook_from_dict__files_dict(files_dict, params):
         assert("list" in files_dict)
     except AssertionError:
         raise FilesDictLacksListKey()
+
+    try:
+        call_depth = kwargs['call_depth']
+    except KeyError:
+        call_depth = 0
+
     try:
         assert("parameters" in files_dict and bool(files_dict["parameters"]))
         files_params = files_dict["parameters"]
+        files_params['call_depth'] = int(call_depth+1)
         return _playbook_from_dict__files_list(files_dict["list"], params, **files_params)
     except AssertionError:
-        return _playbook_from_dict__files_list(files_dict["list"], params)
+        return _playbook_from_dict__files_list(files_dict["list"], params, call_depth=int(call_depth+1))
     
     
     
 def _playbook_from_dict__files(files_list, params):
     
+    try:
+        call_depth = kwargs['call_depth']
+    except KeyError:
+        call_depth = 0
+        
     #print "params: {}".format(params)
     try:
         assert(type(files_list) is list and bool(files_list))
-        return _playbook_from_dict__files_list(files_list, params)
+        return _playbook_from_dict__files_list(files_list, params, call_depth=int(call_depth+1))
     except AssertionError:
         assert(type(files_list) is dict and bool(files_list))
-        return _playbook_from_dict__files_dict(files_list, params)
+        return _playbook_from_dict__files_dict(files_list, params, call_depth=int(call_depth+1))
     except Exception:
         raise FilesSectionEmpty()
     
@@ -562,6 +587,11 @@ def _playbook_from_dict(**kwargs):
         params = kwargs['parameters']
     except KeyError:
         params = {}    
+
+    try:
+        call_depth = kwargs['call_depth']
+    except KeyError:
+        call_depth = 0
     
     try:
         plans_dict = kwargs['plans']
@@ -574,7 +604,8 @@ def _playbook_from_dict(**kwargs):
         
         try:
             return _playbook_from_list(plans=plans_dict['plans'],
-                                       parameters=params)
+                                       parameters=params,
+                                       call_depth=int(call_depth+1))
         except KeyError:
             
             # handle plan type: plan file
@@ -586,7 +617,7 @@ def _playbook_from_dict(**kwargs):
                    not run_selector_affirmative(plans_dict['run_selectors']):
                     raise PlanOmittedByRunSelector()
                 
-                return _playbook_from_dict__plan(plan_name, params)
+                return _playbook_from_dict__plan(plan_name, params, call_depth=int(call_depth+1))
             except KeyError:
                 
                 try:
@@ -594,7 +625,7 @@ def _playbook_from_dict(**kwargs):
                     # handle plan type: files
                     files_list = plans_dict['files']
                     #print "files_list: {}".format(str(files_list))
-                    ret = _playbook_from_dict__files(files_list, params)
+                    ret = _playbook_from_dict__files(files_list, params, call_depth=int(call_depth+1))
                     #print "ret: {}".format(ret)
                     return ret
                 except KeyError:
@@ -610,7 +641,7 @@ def _playbook_from_dict(**kwargs):
                             except KeyError:
                                 order = 0
                                 
-                            return _playbook_from_dict__inline(inline_snippet_container['ansible'], order)
+                            return _playbook_from_dict__inline(inline_snippet_container['ansible'], order, call_depth=int(call_depth+1))
                             
                         except AssertionError:
                             raise MalformedInlineAnsibleSnippet()
