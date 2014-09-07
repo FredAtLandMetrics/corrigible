@@ -3,12 +3,18 @@
 import argparse
 import os
 
-from corrigible.lib.playbook import write_ansible_playbook, run_ansible_playbook, ansible_playbook_filepath, run_hashes_fetch_playbook
+from corrigible.lib.playbook import \
+    write_ansible_playbook, \
+    run_ansible_playbook, \
+    ansible_playbook_filepath, \
+    run_hashes_fetch_playbook, \
+    SYSTEM_FILE_SUFFIX
 from corrigible.lib.hostsfile import write_ansible_hosts, ansible_hostsfile_filepath
 from corrigible.lib.selector import set_run_selectors_list
 from corrigible.lib.rocketmode import rocket_mode
+from corrigible.lib.dirpaths import systems_dirpath
 
-SCRIPT_DIRPATH = os.path.dirname( __file__ )
+SCRIPT_DIRPATH = os.path.dirname(__file__)
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
 PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
 
@@ -21,13 +27,19 @@ if __name__ == '__main__':
         prog='corrigible'
     )
     
-    progargs = ( ( "system", "positional", "the name of the system (or group) whose config will be parsed" ),
-                 ( "playbook-output-file", "full", "the playbook output file (for testing, use discouraged)"),
-                 ( "hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
-                 ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ),
-                 ( "selectors", "full", "a list of run selectors to be applied to include/exclude plans" ),
-                 ( "skip-cleanup", "short", "for development/testing purposes...leaves temp files in place" ),
-                 ( "rocket-mode", "short", "rocket past any plans that haven't changed and that have already been executed in the past" ) )
+    progargs = (
+        ("system", "positional", "the name of the system (or group) whose config will be parsed"),
+        ("playbook-output-file", "full", "the playbook output file (for testing, use discouraged)"),
+        ("hosts-output-file", "full", "the hosts output file (for testing, use discouraged)"),
+        ("generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files"),
+        ("selectors", "full", "a list of run selectors to be applied to include/exclude plans"),
+        ("skip-cleanup", "short", "for development/testing purposes...leaves temp files in place"),
+        (
+            "rocket-mode",
+            "short",
+            "rocket past any plans that haven't changed and that have already been executed in the past"
+        )
+    )
     
     for arginfo in progargs:
         optname, opttype, opthelp = arginfo
@@ -42,29 +54,35 @@ if __name__ == '__main__':
     options = {}
     for opt, val in args.iteritems():
         options[opt] = val
-        
+
+    # set system file
+    system_config_filepath(
+        os.path.join(
+            systems_dirpath(),
+            "{}.{}".format(options["system"], SYSTEM_FILE_SUFFIX)
+        )
+    )
+
     try:
+        selectors = None
         if "," in options['selectors']:
             selectors = [s.trim() for s in options['selectors'].split(',')]
         elif type(options['selectors']) is str and bool(options['selectors']):
             selectors = [options['selectors']]
-        set_run_selectors_list(selectors)
+        if selectors is not None:
+            set_run_selectors_list(selectors)
     except (KeyError, AttributeError, TypeError):
         pass
     
     write_ansible_hosts(options)
     if 'rocket_mode' in options and bool(options['rocket_mode']):
-        #print "BEGIN ROCKET MODE!"
         run_hashes_fetch_playbook(options)
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
-        print "DBG: SETTING ROCKET MODE!"
         rocket_mode(True)
         
     write_ansible_playbook(options)
     
-    
     if not options["generate_files_only"]:
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
-    

@@ -18,9 +18,9 @@ def system_config(opts):
         if _system_conf is None:
             system_name = opts["system"]
             plan_file_stack_push(system_name)
-            system_config_filepath = os.path.join(systems_dirpath(), "{}.{}".format(system_name, SYSTEM_FILE_SUFFIX))
-            print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath)
-            with open (system_config_filepath, "r") as system_def_fh: 
+            # system_config_filepath = os.path.join(systems_dirpath(), "{}.{}".format(system_name, SYSTEM_FILE_SUFFIX))
+            print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath())
+            with open (system_config_filepath(), "r") as system_def_fh:
                 
                 params = dict(sys_default_parameters().items() + os.environ.items())
                 
@@ -65,9 +65,15 @@ def system_config(opts):
     except IOError:
         print "\nERR: system config not found at: {}, system_config will be None\n".format(system_config_filepath)
     return _system_conf
-    
-#def _get_system_config_parameters(sysdef_str):
-    
+
+_sys_conf_fp = None
+def system_config_filepath(sysconf_filepath=None):
+    global _sys_conf_fp
+    if sysconf_filepath is not None:
+        _sys_conf_fp = sysconf_filepath
+    return _sys_conf_fp
+    # return os.path.join(systems_dirpath(), "{}.{}".format(system_name, SYSTEM_FILE_SUFFIX))
+
     
 def _filter_system_def(raw, opts):
     system_conf = yaml.load(raw)
