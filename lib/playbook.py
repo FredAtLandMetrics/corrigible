@@ -384,7 +384,8 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
         raise RequiredParameterContainerFilepathStackNotProvided()
 
     tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
-    
+
+    # append a snippet for each file in the files list
     for f in files_list:
 
         copy_args = _copy_directive_argstr(_merge_args(f, kwargs))
@@ -410,7 +411,10 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
         )
 
 
-def _gen_playbook_from_dict__files_dict(files_dict, params):
+def _gen_playbook_from_dict__files_dict(files_dict, params, **kwargs):
+
+    """call _gen_playbook_from_dict__files_list method on the 'list' attribute of the files dict"""
+
     try:
         assert("list" in files_dict)
     except AssertionError:
@@ -422,6 +426,11 @@ def _gen_playbook_from_dict__files_dict(files_dict, params):
         raise RequiredParameterCallDepthNotProvided()
 
     try:
+        container_filepath_stack = kwargs['container_filepath_stack']
+    except KeyError:
+        raise RequiredParameterContainerFilepathStackNotProvided()
+
+    try:
         assert("parameters" in files_dict and bool(files_dict["parameters"]))
         files_params = files_dict["parameters"]
         files_params['call_depth'] = int(call_depth+1)
@@ -430,15 +439,21 @@ def _gen_playbook_from_dict__files_dict(files_dict, params):
         return _gen_playbook_from_dict__files_list(files_dict["list"], params, call_depth=int(call_depth+1))
     
     
-    
 def _gen_playbook_from_dict__files(files_list, params, **kwargs):
-    
+
+    """call _gen_playbook_from_dict__files_list if files_list is a list, otherwise call
+    _gen_playbook_from_dict__files_dict"""
+
     try:
         call_depth = kwargs['call_depth']
     except KeyError:
         raise RequiredParameterCallDepthNotProvided()
-        
-    #print "params: {}".format(params)
+
+    try:
+        container_filepath_stack = kwargs['container_filepath_stack']
+    except KeyError:
+        raise RequiredParameterContainerFilepathStackNotProvided()
+
     try:
         assert(type(files_list) is list and bool(files_list))
         return _gen_playbook_from_dict__files_list(files_list, params, call_depth=int(call_depth+1))
@@ -447,9 +462,31 @@ def _gen_playbook_from_dict__files(files_list, params, **kwargs):
         return _gen_playbook_from_dict__files_dict(files_list, params, call_depth=int(call_depth+1))
     except Exception:
         raise FilesSectionEmpty()
-    
+
+
 def _gen_playbook_from_dict__inline(snippet, order, **kwargs):
-    return [(order, yaml.dump(snippet))]
+
+    """append a snippet to the snippets list for the inline ansible snippet"""
+
+    try:
+        call_depth = kwargs['call_depth']
+    except KeyError:
+        raise RequiredParameterCallDepthNotProvided()
+
+    try:
+        container_filepath_stack = kwargs['container_filepath_stack']
+    except KeyError:
+        raise RequiredParameterContainerFilepathStackNotProvided()
+
+    _append_snippet_dict(
+        {
+            "snippet_txt": yaml.dump(snippet),
+            "order": order,
+            "run_selector_affirmative": True,
+            "container_filepath_stack": container_filepath_stack,
+            "call_depth": call_depth
+        }
+    )
 
 def _merge_args(args_base, args_adding):
     ret = dict(args_base.items() + args_adding.items())
