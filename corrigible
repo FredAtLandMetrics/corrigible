@@ -7,12 +7,12 @@ from corrigible.lib.playbook import \
     write_ansible_playbook, \
     run_ansible_playbook, \
     ansible_playbook_filepath, \
-    run_hashes_fetch_playbook, \
-    SYSTEM_FILE_SUFFIX
+    run_hashes_fetch_playbook
 from corrigible.lib.hostsfile import write_ansible_hosts, ansible_hostsfile_filepath
 from corrigible.lib.selector import set_run_selectors_list
 from corrigible.lib.rocketmode import rocket_mode
 from corrigible.lib.dirpaths import systems_dirpath
+from corrigible.lib.system import system_config_filepath, SYSTEM_FILE_SUFFIX
 
 SCRIPT_DIRPATH = os.path.dirname(__file__)
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
@@ -77,8 +77,10 @@ if __name__ == '__main__':
     write_ansible_hosts(options)
     if 'rocket_mode' in options and bool(options['rocket_mode']):
         run_hashes_fetch_playbook(options)
-        run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
-                             hosts_filepath=ansible_hostsfile_filepath(options))
+        run_ansible_playbook(
+            playbook_filepath=ansible_playbook_filepath(options),
+            hosts_filepath=ansible_hostsfile_filepath(options)
+        )
         rocket_mode(True)
         
     write_ansible_playbook(options)
