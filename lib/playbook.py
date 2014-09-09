@@ -565,7 +565,7 @@ def _text_from_tuple_list(*args):
         #print "tuple_list: {}".format(tuple_list)
         for playbook_text_tuple in tuple_list:
             ordernum, playbook_text = playbook_text_tuple
-            heapq.heappush(retlist, (ordernum, playbook_text))
+            heappush(retlist, (ordernum, playbook_text))
     ret = ""
     for plan in sorted(retlist):
         order, txt = plan
@@ -697,8 +697,6 @@ def _copy_directive_argstr(params, files_list_item):
 
         ansible_arg_key_str, corrigible_arg_keys = arg_tuple
 
-        key_argstr = None
-
         if type(corrigible_arg_keys) is not list:
             corrigible_arg_keys = [corrigible_arg_keys]
 
@@ -722,7 +720,7 @@ def _copy_directive_argstr(params, files_list_item):
                     ansible_arg_val_str = filepath
 
             newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
-            if key_argstr is not None:
+            if newargstr is not None:
                 argstr_list.append(newargstr)
 
     if bool(argstr_list):
