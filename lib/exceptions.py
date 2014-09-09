@@ -56,3 +56,7 @@ class RequiredParameterRunSelectorAffirmativeNotProvided(Exception):
 
 class IncomprehensiblePlanDict(Exception):
     pass
+
+
+class RequiredParameterOrderNotDefined(Exception):
+    pass
