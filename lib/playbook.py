@@ -2,15 +2,14 @@
 
 import jinja2
 import yaml
-import heapq
 import copy
 import os
 import subprocess
 import tempfile
-import traceback
 
 from jinja2 import Template
 from jinja2.exceptions import TemplateSyntaxError
+from heapq import heappush, heappop
 from corrigible.lib.system import system_config, system_config_filepath
 from corrigible.lib.exceptions import \
     PlanFileDoesNotExist, \
@@ -25,7 +24,8 @@ from corrigible.lib.exceptions import \
     RequiredParameterPlansNotProvided, \
     RequiredParameterCallDepthNotProvided, \
     RequiredParameterRunSelectorAffirmativeNotProvided, \
-    IncomprehensiblePlanDict
+    IncomprehensiblePlanDict, \
+    RequiredParameterOrderNotDefined
 from corrigible.lib.planfilestack import \
     plan_file_stack_push, \
     plan_file_stack_pop, \
@@ -36,6 +36,7 @@ from corrigible.lib.dirpaths import temp_exec_dirpath, hashes_dirpath
 from corrigible.lib.sys_default_params import sys_default_parameters
 from corrigible.lib.planhash import plan_hash_filepath, plan_hash_filepath_exists
 from corrigible.lib.rocketmode import rocket_mode
+from yaml.scanner import MarkedYAMLError, ScannerError
 
 jinja2.Environment(autoescape=False)
 
@@ -121,7 +122,7 @@ def write_ansible_playbook(opts):
                     assert(playbook_output is not None)
 
                     try:
-                        filtered_output = _filter_final_playbook_output(playbook_output, opts)
+                        filtered_output = _filter_final_playbook_output(playbook_output)
                         assert(type(filtered_output) is str and bool(filtered_output))
                         playbook_output = "{}\n{}".format(
                             _playbook_hashes_prefix(params),
@@ -142,6 +143,54 @@ def write_ansible_playbook(opts):
         except AssertionError:
             print "WARN: no plans defined!"
             
+    except TypeError:
+        if mconf is None:
+            print "ERR: No system config, not writing ansible playbook file"
+            return
+        else:
+            raise
+
+def build_playbook_string_from_snippets(**kwargs):
+    global _snippet_dicts
+    try:
+        snippet_list = kwargs['snippets']
+    except KeyError:
+        snippet_list = _snippet_dicts
+
+    print "snippet list: {}".format(snippet_list)
+
+    snippet_heap = []
+    for snippet in snippet_list:
+        heappush(snippet_heap, (snippet['order'], snippet['snippet_txt']))
+
+    return "\n".join([x[1] for x in [heappop(snippet_heap) for i in range(len(snippet_heap))]])
+
+
+def run_hashes_fetch_playbook(opts):
+    mconf = None
+    try:
+        mconf = system_config(opts)
+        try:
+            plans = mconf['plans']
+        except KeyError:
+            plans = {}
+
+        try:
+            params = mconf['parameters']
+        except KeyError:
+            params = {}
+
+        params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
+        try:
+            assert(bool(plans))
+            with open(ansible_playbook_filepath(opts), "w") as fh:
+                playbook_output = _playbook_hashes_prefix(params, fetch_hashes=True)
+                fh.write(playbook_output)
+        except PlanFileDoesNotExist as e:
+            print "ERR: plan referenced for which no file was found: {}, stack: {}". \
+                format(str(e), plan_file_stack_as_str())
+        except AssertionError:
+            print "WARN: no plans defined!"
     except TypeError:
         if mconf is None:
             print "ERR: No system config, not writing ansible playbook file"
@@ -388,7 +437,7 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
     # append a snippet for each file in the files list
     for f in files_list:
 
-        copy_args = _copy_directive_argstr(_merge_args(f, kwargs))
+        copy_args = _copy_directive_argstr(params, _merge_args(f, kwargs))
         copy_directive_txt = "{}    - copy: {}\n".format(tasks_header, copy_args)
 
         try:
@@ -434,9 +483,15 @@ def _gen_playbook_from_dict__files_dict(files_dict, params, **kwargs):
         assert("parameters" in files_dict and bool(files_dict["parameters"]))
         files_params = files_dict["parameters"]
         files_params['call_depth'] = int(call_depth+1)
+        files_params['container_filepath_stack'] = container_filepath_stack
         return _gen_playbook_from_dict__files_list(files_dict["list"], params, **files_params)
     except AssertionError:
-        return _gen_playbook_from_dict__files_list(files_dict["list"], params, call_depth=int(call_depth+1))
+        return _gen_playbook_from_dict__files_list(
+            files_dict["list"],
+            params,
+            call_depth=int(call_depth+1),
+            container_filepath_stack=container_filepath_stack
+        )
     
     
 def _gen_playbook_from_dict__files(files_list, params, **kwargs):
@@ -456,10 +511,20 @@ def _gen_playbook_from_dict__files(files_list, params, **kwargs):
 
     try:
         assert(type(files_list) is list and bool(files_list))
-        return _gen_playbook_from_dict__files_list(files_list, params, call_depth=int(call_depth+1))
+        return _gen_playbook_from_dict__files_list(
+            files_list,
+            params,
+            call_depth=int(call_depth+1),
+            container_filepath_stack=container_filepath_stack
+        )
     except AssertionError:
         assert(type(files_list) is dict and bool(files_list))
-        return _gen_playbook_from_dict__files_dict(files_list, params, call_depth=int(call_depth+1))
+        return _gen_playbook_from_dict__files_dict(
+            files_list,
+            params,
+            call_depth=int(call_depth+1),
+            container_filepath_stack=container_filepath_stack
+        )
     except Exception:
         raise FilesSectionEmpty()
 
@@ -487,6 +552,7 @@ def _gen_playbook_from_dict__inline(snippet, order, **kwargs):
             "call_depth": call_depth
         }
     )
+
 
 def _merge_args(args_base, args_adding):
     ret = dict(args_base.items() + args_adding.items())
@@ -536,11 +602,12 @@ def _touch_hash_stanza_suffix(plan_name, params):
 
 def _str_bool(v):
     try:
-        assert((type(v) is str and v.lower() in ['yes','true']) or
+        assert((type(v) is str and v.lower() in ['yes', 'true']) or
                (type(v) is bool and bool(v)))
         return True
     except AssertionError:
         return False
+
 
 def _playbook_hashes_prefix(params, **kwargs):
 
@@ -579,26 +646,16 @@ def _playbook_hashes_prefix(params, **kwargs):
         return ret
 
 
-def _filter_final_playbook_output(raw, opts):
+def _filter_final_playbook_output(raw):
     try:
         assert(type(raw) is str and bool(raw))
         as_struct = yaml.load(raw)
         as_string = yaml.dump(as_struct)
         return as_string
-    except (yaml.parser.ParserError, yaml.scanner.ScannerError) as e:
+    except (MarkedYAMLError, ScannerError) as e:
         print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw)
     except AssertionError:
         print "INFO: no playbook output to filter"
-
-
-def build_playbook_string_from_snippets(**kwargs):
-    global _snippet_dicts
-    try:
-        snippet_list = kwargs['snippets']
-    except KeyError:
-        snippet_list = _snippet_dicts
-
-    return "\n".join([x["snippet_txt"] for x in snippet_list])
 
 
 def _append_snippet_dict(d):
@@ -606,6 +663,12 @@ def _append_snippet_dict(d):
     if type(d) is not list:
         d = [d]
     for dx in d:
+
+        try:
+            assert('order' in dx)
+        except AssertionError:
+            raise RequiredParameterOrderNotDefined()
+
         _snippet_dicts.append(dx)
 
 
@@ -623,7 +686,7 @@ def _extract_order(d, default=0):
         return default
 
 
-def _copy_directive_argstr(files_list_item):
+def _copy_directive_argstr(params, files_list_item):
     arg_data = (('src', ['source', 'src']),
                 ('dest', ['destination', 'dest', 'dst']),
                 ('mode', 'mode'),
@@ -636,7 +699,7 @@ def _copy_directive_argstr(files_list_item):
 
         key_argstr = None
 
-        if (type(corrigible_arg_keys) is not list):
+        if type(corrigible_arg_keys) is not list:
             corrigible_arg_keys = [corrigible_arg_keys]
 
         for corrigible_arg_key in corrigible_arg_keys:
@@ -647,11 +710,11 @@ def _copy_directive_argstr(files_list_item):
 
             # if this is the src param and template mode is on, render the src file as a template
             # and substitute the new file for the requested file in the argstr
-            if ansible_arg_key_str == 'src' and
-                'template' in files_list_item and
-                _str_bool(files_list_item['template']):
+            has_template = bool('template' in files_list_item and _str_bool(files_list_item['template']))
+            if ansible_arg_key_str == 'src' and has_template:
+
                 with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
-                    raw_template_contents_str = sfh.read().encode('utf-8','ignore')
+                    raw_template_contents_str = sfh.read().encode('utf-8', 'ignore')
                     fh, filepath = tempfile.mkstemp()
                     with open(filepath, 'w') as dfh:
                         dfh.write(Template(raw_template_contents_str).render(params))
@@ -659,11 +722,10 @@ def _copy_directive_argstr(files_list_item):
                     ansible_arg_val_str = filepath
 
             newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
-        if key_argstr is not None:
-            argstr_list.append(newargstr)
+            if key_argstr is not None:
+                argstr_list.append(newargstr)
 
     if bool(argstr_list):
         return " ".join(argstr_list)
 
     return None
-
