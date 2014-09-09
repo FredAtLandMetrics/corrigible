@@ -36,9 +36,9 @@ class TestSystemParams(CorrigibleTest):
         s = self.playbook_as_struct()
         self.assertTrue(type(s) is list)
         self.assertTrue(len(s) > 0)
-        self.assertTrue(type(s[0]) is dict)
-        self.assertTrue('user' in s[0])
-        self.assertTrue(s[0]['user'] == os.environ['USER'])
+        self.assertTrue(type(s[1]) is dict)
+        self.assertTrue('user' in s[1])
+        self.assertTrue(s[1]['user'] == os.environ['USER'])
         
 if __name__ == '__main__':
     unittest.main()   
