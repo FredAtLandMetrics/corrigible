@@ -40,7 +40,7 @@ class TestFilesWithParameters(CorrigibleTest):
         #print "tr:{}".format(tasksrec['file3'])
         self.assertTrue('copy' in tasksrec['file3'])
         self.assertTrue('file3' in tasksrec['file3']['copy'])
-        tasksrec['file2'] = s[2]['tasks'][1]
+        tasksrec['file2'] = s[4]['tasks'][0]
         #print "tr:{}".format(tasksrec['file3'])
         self.assertTrue('copy' in tasksrec['file2'])
         self.assertTrue('file2' in tasksrec['file2']['copy'])
