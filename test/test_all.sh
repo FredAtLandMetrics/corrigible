@@ -10,12 +10,12 @@ cd $SCRIPTDIR
 ./test_same_file_param_subst.py && \
 ./test_plans_in_subdirs.py && \
 ./test_files_param_subst.py && \
-./test_inline_ansible_plan.py
+./test_inline_ansible_plan.py && \
+./test_local_connect_for_testing.py && \
+./test_files_with_parameters.py && \
+./test_run_selectors.py
 
 # NOT WORKING:
 #
-#   ./test_local_connect_for_testing.py
-#   ./test_run_selectors.py
-#   ./test_files_with_parameters.py
 #   ./test_hashskip.py
 #
