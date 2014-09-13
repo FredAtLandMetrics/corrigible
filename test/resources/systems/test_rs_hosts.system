@@ -1,3 +1,8 @@
+parameters:
+    sudouser: ubuntu
+    deployuser: deploy
+    sudo: yes
+
 hosts:
     - hostname: 'a'
       hostgroup: 'aa'
@@ -37,5 +42,8 @@ plans:
             - ALL
           include:
             - update_dnsservers
-
+    - plan: plans_test
+      run_selectors:
+          exclude:
+            - update_dnsservers
       
