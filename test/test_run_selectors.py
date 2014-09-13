@@ -73,7 +73,6 @@ class TestRunSelectors(CorrigibleTest):
                               generate_files_only=True,
                               run_selectors="update_dnsservers")
         s = self.playbook_as_struct()
-        #print "SSSSSSSSSS: {}, {}".format(type(s), str(s))
         self.assertTrue(type(s) is list and len(s) == 3)
         self.assertTrue(type(s[1]) is dict)
         self.assertTrue('tasks' in s[1].keys())
