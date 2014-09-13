@@ -150,6 +150,32 @@ def write_ansible_playbook(opts):
         else:
             raise
 
+_rs_exclusion_list = None
+def _run_selector_exclusion_list():
+    global _snippet_dicts
+    global _rs_exclusion_list
+    if _rs_exclusion_list is None:
+        _rs_exclusion_list = []
+        for snippet in _snippet_dicts:
+            if not bool(snippet['run_selector_affirmative']):
+                _rs_exclusion_list.append(snippet['container_filepath_stack'])
+    print "excluding: {}".format(_rs_exclusion_list)
+    return _rs_exclusion_list
+
+def _prohibited_by_run_selector(filepath_stack):
+    exclude_stack_list = _run_selector_exclusion_list()
+    for exclude_stack in  exclude_stack_list:
+        if len(filepath_stack) < len(exclude_stack):
+            continue
+        prohibited = True
+        for ndx in range(len(exclude_stack)):
+            if not bool(exclude_stack[ndx] == filepath_stack[ndx]):
+                prohibited = False
+                break
+        if prohibited:
+            return True
+    return False
+
 def build_playbook_string_from_snippets(**kwargs):
     global _snippet_dicts
     try:
@@ -161,7 +187,8 @@ def build_playbook_string_from_snippets(**kwargs):
 
     snippet_heap = []
     for snippet in snippet_list:
-        heappush(snippet_heap, (snippet['order'], snippet['snippet_txt']))
+        if not _prohibited_by_run_selector(snippet['container_filepath_stack']):
+            heappush(snippet_heap, (snippet['order'], snippet['snippet_txt']))
 
     return "\n".join([x[1] for x in [heappop(snippet_heap) for i in range(len(snippet_heap))]])
 
@@ -309,7 +336,7 @@ def _gen_playbook_from_dict__plan(plan_name, params, **kwargs):
         raise RequiredParameterRunSelectorAffirmativeNotProvided()
 
     try:
-        container_filepath_stack = kwargs['container_filepath_stack']
+        container_filepath_stack = copy.copy(kwargs['container_filepath_stack'])
     except KeyError:
         raise RequiredParameterContainerFilepathStackNotProvided()
 
@@ -673,10 +700,11 @@ def _append_snippet_dict(d):
 
 
 def _plan_dict_run_selector_affirmative(plans_dict):
-    return bool(
-        'run_selectors' in plans_dict and
-        not run_selector_affirmative(plans_dict['run_selectors'])
-    )
+    # return bool(
+    #     'run_selectors' in plans_dict and
+    #     not run_selector_affirmative(plans_dict['run_selectors'])
+    # )
+    return bool(run_selector_affirmative(plans_dict['run_selectors']))
 
 
 def _extract_order(d, default=0):
