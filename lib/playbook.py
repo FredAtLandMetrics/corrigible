@@ -103,9 +103,10 @@ def write_ansible_playbook(opts):
             params = mconf['parameters']
         except KeyError:
             params = {}
-            
+        print "params(write_ansible_playbook(pre)): {}\n".format(params)
+
         params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
-            
+        print "params(write_ansible_playbook): {}\n".format(params)
         try:
             assert(bool(plans))
             with open(ansible_playbook_filepath(opts), "w") as fh:
@@ -257,7 +258,7 @@ def _gen_playbook_from_list(**kwargs):
         elif 'files' in plans_dict:
             plan_file_stack_push('files')
             dopop = True
-        print "AAAA- cp0"
+
         try:
             _gen_playbook_from_dict(
                 plans=plans_dict,
@@ -298,6 +299,8 @@ def _gen_playbook_from_dict(**kwargs):
         params = _merge_args(plans_dict['parameters'], params)
     except KeyError:
         pass
+
+    print "params(_gen_playbook_from_dict): {}".format(params)
 
     if 'plan' in plans_dict:
         _gen_playbook_from_dict__plan(
@@ -448,6 +451,7 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
     try:
         assert('sudouser' in params)
     except AssertionError:
+        print "params: {}".format(params)
         raise NoSudoUserParameterDefined()
     
     try:
@@ -537,24 +541,41 @@ def _gen_playbook_from_dict__files(files_list, params, **kwargs):
     except KeyError:
         raise RequiredParameterContainerFilepathStackNotProvided()
 
-    try:
-        assert(type(files_list) is list and bool(files_list))
+    if type(files_list) is list and bool(files_list):
         return _gen_playbook_from_dict__files_list(
             files_list,
             params,
             call_depth=int(call_depth+1),
             container_filepath_stack=container_filepath_stack
         )
-    except AssertionError:
-        assert(type(files_list) is dict and bool(files_list))
+    elif type(files_list) is dict and bool(files_list):
         return _gen_playbook_from_dict__files_dict(
             files_list,
             params,
             call_depth=int(call_depth+1),
             container_filepath_stack=container_filepath_stack
         )
-    except Exception:
+    else:
         raise FilesSectionEmpty()
+
+    # try:
+    #     assert(type(files_list) is list and bool(files_list))
+    #     return _gen_playbook_from_dict__files_list(
+    #         files_list,
+    #         params,
+    #         call_depth=int(call_depth+1),
+    #         container_filepath_stack=container_filepath_stack
+    #     )
+    # except AssertionError:
+    #     assert(type(files_list) is dict and bool(files_list))
+    #     return _gen_playbook_from_dict__files_dict(
+    #         files_list,
+    #         params,
+    #         call_depth=int(call_depth+1),
+    #         container_filepath_stack=container_filepath_stack
+    #     )
+    # except Exception:
+    #     raise FilesSectionEmpty()
 
 
 def _gen_playbook_from_dict__inline(snippet, order, **kwargs):
