@@ -244,31 +244,32 @@ def _gen_playbook_from_list(**kwargs):
         raise RequiredParameterContainerFilepathStackNotProvided()
 
     try:
-
-        for plans_dict in kwargs['plans']:
-            
-            dopop = False
-            if 'plan' in plans_dict:
-                plan_file_stack_push(plans_dict['plan'])
-                dopop = True
-            elif 'files' in plans_dict:
-                plan_file_stack_push('files')
-                dopop = True
-            
-            try:
-                _gen_playbook_from_dict(
-                    plans=plans_dict,
-                    parameters=params,
-                    call_depth=int(call_depth+1),
-                    container_filepath_stack=container_filepath_stack
-                )
-            except PlanOmittedByRunSelector:
-                pass
-            
-            if dopop:
-                plan_file_stack_pop()
+        plans_list = kwargs['plans']
     except KeyError:
         raise RequiredParameterPlansNotProvided()
+
+    for plans_dict in plans_list:
+
+        dopop = False
+        if 'plan' in plans_dict:
+            plan_file_stack_push(plans_dict['plan'])
+            dopop = True
+        elif 'files' in plans_dict:
+            plan_file_stack_push('files')
+            dopop = True
+        print "AAAA- cp0"
+        try:
+            _gen_playbook_from_dict(
+                plans=plans_dict,
+                parameters=params,
+                call_depth=int(call_depth+1),
+                container_filepath_stack=container_filepath_stack
+            )
+        except PlanOmittedByRunSelector:
+            pass
+
+        if dopop:
+            plan_file_stack_pop()
 
 
 def _gen_playbook_from_dict(**kwargs):
@@ -704,7 +705,10 @@ def _plan_dict_run_selector_affirmative(plans_dict):
     #     'run_selectors' in plans_dict and
     #     not run_selector_affirmative(plans_dict['run_selectors'])
     # )
-    return bool(run_selector_affirmative(plans_dict['run_selectors']))
+    try:
+        return bool(run_selector_affirmative(plans_dict['run_selectors']))
+    except:
+        return True  # default to true
 
 
 def _extract_order(d, default=0):
