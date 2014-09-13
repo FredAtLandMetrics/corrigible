@@ -62,7 +62,7 @@ class TestRunSelectors(CorrigibleTest):
         self.rerun_corrigible(system_config="test_rs_hosts",
                               generate_files_only=True)
         s = self.playbook_as_struct()
-        self.assertTrue(type(s) is list and len(s) == 3)
+        self.assertTrue(type(s) is list and len(s) >= 3)
         self.assertTrue(type(s[1]) is dict)
         self.assertTrue('tasks' in s[1].keys())
         self.assertTrue(type(s[1]['tasks']) is list)
@@ -73,7 +73,7 @@ class TestRunSelectors(CorrigibleTest):
                               generate_files_only=True,
                               run_selectors="update_dnsservers")
         s = self.playbook_as_struct()
-        self.assertTrue(type(s) is list and len(s) == 3)
+        self.assertTrue(type(s) is list and len(s) >= 3)
         self.assertTrue(type(s[1]) is dict)
         self.assertTrue('tasks' in s[1].keys())
         self.assertTrue(type(s[1]['tasks']) is list)
