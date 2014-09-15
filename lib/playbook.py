@@ -103,10 +103,10 @@ def write_ansible_playbook(opts):
             params = mconf['parameters']
         except KeyError:
             params = {}
-        print "params(write_ansible_playbook(pre)): {}\n".format(params)
+        # print "params(write_ansible_playbook(pre)): {}\n".format(params)
 
         params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
-        print "params(write_ansible_playbook): {}\n".format(params)
+        # print "params(write_ansible_playbook): {}\n".format(params)
         try:
             assert(bool(plans))
             with open(ansible_playbook_filepath(opts), "w") as fh:
@@ -115,7 +115,8 @@ def write_ansible_playbook(opts):
                     plans=plans,
                     parameters=params,
                     container_filepath_stack=[system_config_filepath()],
-                    call_depth=0
+                    call_depth=0,
+                    run_selector_affirmative=True
                 )
                 playbook_output = build_playbook_string_from_snippets()
                 
@@ -245,6 +246,12 @@ def _gen_playbook_from_list(**kwargs):
         raise RequiredParameterContainerFilepathStackNotProvided()
 
     try:
+        runsel_affirmative = kwargs['run_selector_affirmative']
+    except KeyError:
+        raise RequiredParameterRunSelectorAffirmativeNotProvided()
+
+
+    try:
         plans_list = kwargs['plans']
     except KeyError:
         raise RequiredParameterPlansNotProvided()
@@ -264,7 +271,8 @@ def _gen_playbook_from_list(**kwargs):
                 plans=plans_dict,
                 parameters=params,
                 call_depth=int(call_depth+1),
-                container_filepath_stack=container_filepath_stack
+                container_filepath_stack=container_filepath_stack,
+                run_selector_affirmative=runsel_affirmative
             )
         except PlanOmittedByRunSelector:
             pass
@@ -300,14 +308,22 @@ def _gen_playbook_from_dict(**kwargs):
     except KeyError:
         pass
 
-    print "params(_gen_playbook_from_dict): {}".format(params)
+    try:
+        runsel_affirmative = kwargs['run_selector_affirmative']
+    except KeyError:
+        raise RequiredParameterRunSelectorAffirmativeNotProvided()
+    # print "params(_gen_playbook_from_dict): {}".format(params)
+
+    if runsel_affirmative:
+        runsel_affirmative = _plan_dict_run_selector_affirmative(plans_dict)
+
 
     if 'plan' in plans_dict:
         _gen_playbook_from_dict__plan(
             plans_dict['plan'],
             params,
             call_depth=int(call_depth+1),
-            run_selector_affirmative=_plan_dict_run_selector_affirmative(plans_dict),
+            run_selector_affirmative=runsel_affirmative,
             container_filepath_stack=container_filepath_stack
         )
     elif 'files' in plans_dict:
@@ -315,6 +331,7 @@ def _gen_playbook_from_dict(**kwargs):
             plans_dict['files'],
             params,
             call_depth=int(call_depth+1),
+            run_selector_affirmative=runsel_affirmative,
             container_filepath_stack=container_filepath_stack
         )
     elif 'inline' in plans_dict:
@@ -323,6 +340,7 @@ def _gen_playbook_from_dict(**kwargs):
             inline_snippet_container['ansible'],
             _extract_order(inline_snippet_container),
             call_depth=int(call_depth+1),
+            run_selector_affirmative=runsel_affirmative,
             container_filepath_stack=container_filepath_stack
         )
     else:
@@ -339,6 +357,8 @@ def _gen_playbook_from_dict__plan(plan_name, params, **kwargs):
     except KeyError:
         raise RequiredParameterRunSelectorAffirmativeNotProvided()
 
+    # print "runsel_affirmative: {}".format(runsel_affirmative)
+
     try:
         container_filepath_stack = copy.copy(kwargs['container_filepath_stack'])
     except KeyError:
@@ -349,8 +369,8 @@ def _gen_playbook_from_dict__plan(plan_name, params, **kwargs):
     except KeyError:
         raise RequiredParameterCallDepthNotProvided()
 
-    if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
-        raise DuplicatePlanInRocketMode()
+    # if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
+    #     raise DuplicatePlanInRocketMode()
 
     # determine path and index
     plan_ndx = plan_index(plan_name)
@@ -412,25 +432,26 @@ def _gen_playbook_from_dict__plan(plan_name, params, **kwargs):
                     plans=yaml_struct['plans'],
                     parameters=params,
                     call_depth=int(call_depth+1),
-                    container_filepath_stack=container_filepath_stack
+                    container_filepath_stack=container_filepath_stack,
+                    run_selector_affirmative=runsel_affirmative
                 )
             except AssertionError:
                 try:
 
                     # case 2: ansible
                     assert(type(yaml_struct) is list and len(yaml_struct) > 0)
-                    _append_snippet_dict(
-                        {
-                            "snippet_txt": "{}\n{}\n".format(
-                                pass2_rendered_yaml_str,
-                                _touch_hash_stanza_suffix(plan_name, params)
-                            ),
-                            "order": plan_ndx,
-                            "run_selector_affirmative": runsel_affirmative,
-                            "container_filepath_stack": container_filepath_stack,
-                            "call_depth": call_depth
-                        }
-                    )
+                    snippet_dict = {
+                        "snippet_txt": "{}\n{}\n".format(
+                            pass2_rendered_yaml_str,
+                            _touch_hash_stanza_suffix(plan_name, params)
+                        ),
+                        "order": plan_ndx,
+                        "run_selector_affirmative": runsel_affirmative,
+                        "container_filepath_stack": container_filepath_stack,
+                        "call_depth": call_depth
+                    }
+                    print "appending snippet:\n{}\n".format(snippet_dict)
+                    _append_snippet_dict(snippet_dict)
 
                 except AssertionError:
                     raise UnparseablePlanFile()
@@ -451,7 +472,7 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
     try:
         assert('sudouser' in params)
     except AssertionError:
-        print "params: {}".format(params)
+        # print "params: {}".format(params)
         raise NoSudoUserParameterDefined()
     
     try:
@@ -463,6 +484,11 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
         container_filepath_stack = kwargs['container_filepath_stack']
     except KeyError:
         raise RequiredParameterContainerFilepathStackNotProvided()
+
+    try:
+        runsel_affirmative = kwargs['run_selector_affirmative']
+    except KeyError:
+        raise RequiredParameterRunSelectorAffirmativeNotProvided()
 
     tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
 
@@ -485,9 +511,9 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
             {
                 "snippet_txt": copy_directive_txt,
                 "order": order,
-                "run_selector_affirmative": True,
                 "container_filepath_stack": container_filepath_stack,
-                "call_depth": call_depth
+                "call_depth": call_depth,
+                "run_selector_affirmative": runsel_affirmative
             }
         )
 
@@ -512,17 +538,28 @@ def _gen_playbook_from_dict__files_dict(files_dict, params, **kwargs):
         raise RequiredParameterContainerFilepathStackNotProvided()
 
     try:
+        runsel_affirmative = kwargs['run_selector_affirmative']
+    except KeyError:
+        raise RequiredParameterRunSelectorAffirmativeNotProvided()
+
+    try:
         assert("parameters" in files_dict and bool(files_dict["parameters"]))
         files_params = files_dict["parameters"]
         files_params['call_depth'] = int(call_depth+1)
         files_params['container_filepath_stack'] = container_filepath_stack
-        return _gen_playbook_from_dict__files_list(files_dict["list"], params, **files_params)
+        files_params['run_selector_affirmative'] = runsel_affirmative
+        return _gen_playbook_from_dict__files_list(
+            files_dict["list"],
+            params,
+            **files_params
+        )
     except AssertionError:
         return _gen_playbook_from_dict__files_list(
             files_dict["list"],
             params,
             call_depth=int(call_depth+1),
-            container_filepath_stack=container_filepath_stack
+            container_filepath_stack=container_filepath_stack,
+            run_selector_affirmative=runsel_affirmative
         )
     
     
@@ -541,19 +578,26 @@ def _gen_playbook_from_dict__files(files_list, params, **kwargs):
     except KeyError:
         raise RequiredParameterContainerFilepathStackNotProvided()
 
+    try:
+        runsel_affirmative = kwargs['run_selector_affirmative']
+    except KeyError:
+        raise RequiredParameterRunSelectorAffirmativeNotProvided()
+
     if type(files_list) is list and bool(files_list):
         return _gen_playbook_from_dict__files_list(
             files_list,
             params,
             call_depth=int(call_depth+1),
-            container_filepath_stack=container_filepath_stack
+            container_filepath_stack=container_filepath_stack,
+            run_selector_affirmative=runsel_affirmative
         )
     elif type(files_list) is dict and bool(files_list):
         return _gen_playbook_from_dict__files_dict(
             files_list,
             params,
             call_depth=int(call_depth+1),
-            container_filepath_stack=container_filepath_stack
+            container_filepath_stack=container_filepath_stack,
+            run_selector_affirmative=runsel_affirmative
         )
     else:
         raise FilesSectionEmpty()
@@ -592,11 +636,16 @@ def _gen_playbook_from_dict__inline(snippet, order, **kwargs):
     except KeyError:
         raise RequiredParameterContainerFilepathStackNotProvided()
 
+    try:
+        runsel_affirmative = kwargs['run_selector_affirmative']
+    except KeyError:
+        raise RequiredParameterRunSelectorAffirmativeNotProvided()
+
     _append_snippet_dict(
         {
             "snippet_txt": yaml.dump(snippet),
             "order": order,
-            "run_selector_affirmative": True,
+            "run_selector_affirmative": runsel_affirmative,
             "container_filepath_stack": container_filepath_stack,
             "call_depth": call_depth
         }
@@ -660,7 +709,7 @@ def _str_bool(v):
 
 def _playbook_hashes_prefix(params, **kwargs):
 
-    print "DBG: params: {}".format(params)
+    # print "DBG: params: {}".format(params)
 
     try:
         assert(bool(kwargs['fetch_hashes']))
@@ -727,9 +776,17 @@ def _plan_dict_run_selector_affirmative(plans_dict):
     #     not run_selector_affirmative(plans_dict['run_selectors'])
     # )
     try:
-        return bool(run_selector_affirmative(plans_dict['run_selectors']))
-    except:
-        return True  # default to true
+        print "plan name: {}".format(plans_dict["plan"])
+    except KeyError:
+        print  "plan name: [undef]"
+    ret = True
+    try:
+        ret = bool(run_selector_affirmative(plans_dict['run_selectors']))
+    except KeyError:
+        pass
+
+    print "_plan_dict_run_selector_affirmative returning: {}".format(ret)
+    return ret
 
 
 def _extract_order(d, default=0):
