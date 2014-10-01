@@ -472,7 +472,6 @@ def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
     try:
         assert('sudouser' in params)
     except AssertionError:
-        # print "params: {}".format(params)
         raise NoSudoUserParameterDefined()
     
     try:
