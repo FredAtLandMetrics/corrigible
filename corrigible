@@ -74,17 +74,38 @@ if __name__ == '__main__':
     except (KeyError, AttributeError, TypeError):
         pass
     
+    # write_ansible_hosts(options)
+    # if 'rocket_mode' in options and bool(options['rocket_mode']):
+    #     print "cp0"
+    #     run_hashes_fetch_playbook(options)
+    #     print "cp10"
+    #     run_ansible_playbook(
+    #         playbook_filepath=ansible_playbook_filepath(options),
+    #         hosts_filepath=ansible_hostsfile_filepath(options)
+    #     )
+    #     print "cp20"
+    #     rocket_mode(True)
+    #
+    # write_ansible_playbook(options)
+    #
+    # if not options["generate_files_only"]:
+    #     run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
+    #                          hosts_filepath=ansible_hostsfile_filepath(options))
+
     write_ansible_hosts(options)
     if 'rocket_mode' in options and bool(options['rocket_mode']):
+        print "cp0"
         run_hashes_fetch_playbook(options)
-        run_ansible_playbook(
-            playbook_filepath=ansible_playbook_filepath(options),
-            hosts_filepath=ansible_hostsfile_filepath(options)
-        )
+        print "cp10"
+        # run_ansible_playbook(
+        #     playbook_filepath=ansible_playbook_filepath(options),
+        #     hosts_filepath=ansible_hostsfile_filepath(options)
+        # )
+        print "cp20"
         rocket_mode(True)
-        
+
     write_ansible_playbook(options)
-    
+
     if not options["generate_files_only"]:
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
