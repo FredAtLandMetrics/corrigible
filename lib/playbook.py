@@ -196,36 +196,47 @@ def build_playbook_string_from_snippets(**kwargs):
 
 
 def run_hashes_fetch_playbook(opts):
-    mconf = None
+
     try:
         mconf = system_config(opts)
-        try:
-            plans = mconf['plans']
-        except KeyError:
-            plans = {}
-
-        try:
-            params = mconf['parameters']
-        except KeyError:
-            params = {}
-
-        params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
-        try:
-            assert(bool(plans))
-            with open(ansible_playbook_filepath(opts), "w") as fh:
-                playbook_output = _playbook_hashes_prefix(params, fetch_hashes=True)
-                fh.write(playbook_output)
-        except PlanFileDoesNotExist as e:
-            print "ERR: plan referenced for which no file was found: {}, stack: {}". \
-                format(str(e), plan_file_stack_as_str())
-        except AssertionError:
-            print "WARN: no plans defined!"
     except TypeError:
-        if mconf is None:
-            print "ERR: No system config, not writing ansible playbook file"
-            return
-        else:
-            raise
+        print "ERR: No system config, not writing hashes fetch ansible playbook file"
+        return
+
+    try:
+        plans = mconf['plans']
+        assert(bool(plans))
+    except (KeyError, AssertionError):
+
+        return
+
+    plans = {}
+    if 'plans' in mconf:
+        plans = mconf['plans']
+    if not bool(plans):
+        print "WARN: no plans defined!"
+        return
+
+    params = {}
+    if 'parameters' in mconf:
+        params = mconf['parameters']
+
+    params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
+
+    try:
+        with open(ansible_playbook_filepath(opts), "w") as fh:
+            playbook_output = _playbook_hashes_prefix(params, fetch_hashes=True)
+            fh.write(playbook_output)
+    except PlanFileDoesNotExist as e:
+        print "ERR: plan referenced for which no file was found: {}, stack: {}". \
+            format(str(e), plan_file_stack_as_str())
+        raise
+
+    run_ansible_playbook(
+        playbook_filepath=ansible_playbook_filepath(options),
+        hosts_filepath=ansible_hostsfile_filepath(options)
+    )
+
 
 
 def _gen_playbook_from_list(**kwargs):
@@ -379,90 +390,79 @@ def _gen_playbook_from_dict__plan(plan_name, params, **kwargs):
     # we switched files, append to container filepath stack
     container_filepath_stack.append(plan_path)
 
+    # read the yaml to a string
     try:
-                        
         with open(plan_path, "r") as fh:
-
-            # -------------------------------------------------------------------------
-            # read parameters from template and use that plus any provided params to
-            # divine parameter struct to be used to render the template
-            # -------------------------------------------------------------------------
-            raw_yaml_str = fh.read()
-            try:
-                assert(params is not None and type(params) is dict and bool(params))
-                pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
-                template_render_params = copy.copy(params)
-            except AssertionError:
-                pass1_rendered_yaml_str = Template(raw_yaml_str).render()
-                template_render_params = {}
-                
-            pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
-            
-            try:
-                assert('parameters' in pass1_yaml_struct and
-                       type(pass1_yaml_struct['parameters']) is dict and
-                       bool(pass1_yaml_struct['parameters']))
-                for key, val in pass1_yaml_struct['parameters'].iteritems():
-                    try:
-                        assert(key in template_render_params)
-                    except AssertionError:
-                        template_render_params[key] = val
-            except AssertionError:
-                pass
-                
-            # -------------------------------------------------------------------------
-            # render the template using the params, generate the yaml_struct
-            # -------------------------------------------------------------------------
-            try:
-                assert(bool(template_render_params))
-                pass2_rendered_yaml_str = Template(raw_yaml_str).render(template_render_params)
-            except AssertionError:
-                pass2_rendered_yaml_str = Template(raw_yaml_str).render()
-            
-            yaml_struct = yaml.load(pass2_rendered_yaml_str)
-        
-            # -------------------------------------------------------------------------
-            # detect whether this is an ansible playbook or a corrigible plan.
-            # handle accordingly
-            # -------------------------------------------------------------------------
-            try:
-                # case 1: corrigible plan
-                assert(type(yaml_struct) is dict and 'plans' in yaml_struct)
-                _gen_playbook_from_list(
-                    plans=yaml_struct['plans'],
-                    parameters=params,
-                    call_depth=int(call_depth+1),
-                    container_filepath_stack=container_filepath_stack,
-                    run_selector_affirmative=runsel_affirmative
-                )
-            except AssertionError:
-                try:
-
-                    # case 2: ansible
-                    assert(type(yaml_struct) is list and len(yaml_struct) > 0)
-                    snippet_dict = {
-                        "snippet_txt": "{}\n{}\n".format(
-                            pass2_rendered_yaml_str,
-                            _touch_hash_stanza_suffix(plan_name, params)
-                        ),
-                        "order": plan_ndx,
-                        "run_selector_affirmative": runsel_affirmative,
-                        "container_filepath_stack": container_filepath_stack,
-                        "call_depth": call_depth
-                    }
-                    print "appending snippet:\n{}\n".format(snippet_dict)
-                    _append_snippet_dict(snippet_dict)
-
-                except AssertionError:
-                    raise UnparseablePlanFile()
-
+            raw_yaml_str  = fh.read()
     except TypeError:
         raise PlanFileDoesNotExist(plan_name)
-    except UnknownPlanEncountered:
-        print "encountered error with {}".format(plan_path)
-        raise
-    except TemplateSyntaxError:
-        raise
+
+    # render the yaml using jinja variable substitution and load with YAML parser
+    template_render_params = {}
+    pass1_rendered_yaml_str = None
+    if params is not None and type(params) is dict and bool(params):
+        pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
+        template_render_params = copy.copy(params)
+    else:
+        pass1_rendered_yaml_str = Template(raw_yaml_str).render()
+    pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
+
+    # get the parameters from pass #1 and use them to default any keys
+    # in template_render_params that aren't already set
+    if 'parameters' in pass1_yaml_struct and \
+       type(pass1_yaml_struct['parameters']) is dict and \
+       bool(pass1_yaml_struct['parameters']):
+        for key, val in pass1_yaml_struct['parameters'].iteritems():
+            if key not in template_render_params:
+                template_render_params[key] = val
+
+    # -------------------------------------------------------------------------
+    # render the template using the params, generate the yaml_struct
+    # -------------------------------------------------------------------------
+    pass2_rendered_yaml_str = None
+    if bool(template_render_params):
+        pass2_rendered_yaml_str = Template(raw_yaml_str).render(template_render_params)
+    else:
+        pass2_rendered_yaml_str = Template(raw_yaml_str).render()
+    yaml_struct = yaml.load(pass2_rendered_yaml_str)
+
+    # case I: a corrigible plan
+    if type(yaml_struct) is dict and 'plans' in yaml_struct:
+        _gen_playbook_from_list(
+            plans=yaml_struct['plans'],
+            parameters=params,
+            call_depth=int(call_depth+1),
+            container_filepath_stack=container_filepath_stack,
+            run_selector_affirmative=runsel_affirmative
+        )
+        snippet_dict = {
+            "snippet_txt": "{}\n".format(_touch_hash_stanza_suffix(plan_name, params)),
+            "order": plan_ndx,
+            "run_selector_affirmative": runsel_affirmative,
+            "container_filepath_stack": container_filepath_stack,
+            "call_depth": call_depth
+        }
+        # print "appending snippet:\n{}\n".format(snippet_dict)
+        _append_snippet_dict(snippet_dict)
+
+    # case II: an ansible plan
+    elif type(yaml_struct) is list and len(yaml_struct) > 0:
+        snippet_dict = {
+            "snippet_txt": "{}\n{}\n".format(
+                pass2_rendered_yaml_str,
+                _touch_hash_stanza_suffix(plan_name, params)
+            ),
+            "order": plan_ndx,
+            "run_selector_affirmative": runsel_affirmative,
+            "container_filepath_stack": container_filepath_stack,
+            "call_depth": call_depth
+        }
+        # print "appending snippet:\n{}\n".format(snippet_dict)
+        _append_snippet_dict(snippet_dict)
+
+    # case III: error
+    else:
+        raise UnparseablePlanFile()
 
 
 def _gen_playbook_from_dict__files_list(files_list, params, **kwargs):
@@ -760,7 +760,6 @@ def _append_snippet_dict(d):
     if type(d) is not list:
         d = [d]
     for dx in d:
-
         try:
             assert('order' in dx)
         except AssertionError:
