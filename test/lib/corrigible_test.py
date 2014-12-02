@@ -42,7 +42,7 @@ class CorrigibleTest(unittest.TestCase):
             call_list.append('--selectors={}'.format(kwargs['run_selectors']))
         except KeyError:
             pass
-        
+
         call(call_list, env=os.environ.copy())
         
         
