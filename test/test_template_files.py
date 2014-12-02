@@ -6,7 +6,7 @@ import re
 
 from corrigible.test.lib.corrigible_test import CorrigibleTest
 
-script_dirpath = os.path.abspath( os.path.dirname( __file__ ) )
+script_dirpath = os.path.dirname(  __file__ )
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')

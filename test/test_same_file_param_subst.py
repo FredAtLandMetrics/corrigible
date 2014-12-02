@@ -6,7 +6,7 @@ import os
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
 
-script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
+script_dirpath = os.path.dirname(  __file__ )
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
@@ -49,9 +49,9 @@ class TestSameFileParamSubst(CorrigibleTest):
         self.assertTrue(type(s) is list and len(s) > 0)
         self.assertTrue(type(s[2]) is dict)
         self.assertTrue('tasks' in s[2] and type(s[2]['tasks']) is list and len(s[2]['tasks']) > 0)
-        self.assertTrue(type(s[2]['tasks'][0]) is dict)
-        self.assertTrue('copy' in s[2]['tasks'][0])
-        self.assertTrue('blahfn.txt' in str(s[2]['tasks'][0]['copy']))
+        self.assertTrue(type(s[3]['tasks'][0]) is dict)
+        self.assertTrue('copy' in s[3]['tasks'][0])
+        self.assertTrue('blahfn.txt' in str(s[3]['tasks'][0]['copy']))
         
 
 if __name__ == '__main__':
