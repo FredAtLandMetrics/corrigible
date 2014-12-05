@@ -15,6 +15,10 @@ Specific TODO resulting from #1 above
 4) Add sibling of parameters section, constants, that have overrideability in the opposite directory.  Make them occupy the same namespace as the parameters.  Make them override parameters. (Provides mechanism for ensuring values do not get unexpected overridden)
 5) should add a parameters_file: directive that would have same impact as parameters file (perhaps overrideable by the parameters section) but allow for referencing the same parameters file for multiple systems (and plans, I guess)
 
+Wishlist
+========
+1) fail-on-edited-files - to avoid losing local changes, store md5 hash for any files transferred with the file directive.  if the md5 hash doesn't match the stored one before re-copy, fail and alert
+
 Tests
 =====
 1) scripts that can run remotely
