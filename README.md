@@ -183,6 +183,7 @@ plans:
       parameters:
           some_custom_param: val1
           note: this makes jinja loops useful!
+          addl_note: this has god-like precedent and won't be overriden by higher-level parameters or environment variables so be careful
     - plan: plans_test
     - plan: add_deploy_user
     - files:
