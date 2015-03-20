@@ -180,6 +180,9 @@ plans:
           exclude:
             - update_dnsservers      
     - plan: install_cron
+      parameters:
+          some_custom_param: val1
+          note: this makes jinja loops useful!
     - plan: plans_test
     - plan: add_deploy_user
     - files:
