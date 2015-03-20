@@ -19,7 +19,9 @@ from corrigible.lib.exceptions import PlanFileDoesNotExist, \
                                       FilesDictLacksListKey, \
                                       NoSudoUserParameterDefined, \
                                       UnparseablePlanFile, \
-                                      DuplicatePlanInRocketMode
+                                      DuplicatePlanInRocketMode, \
+                                      RequiredParameterPlansNotProvided, \
+                                      MalformedInlineAnsibleSnippet
 from corrigible.lib.planfilestack import plan_file_stack_push, \
                                          plan_file_stack_pop, \
                                          plan_file_stack_as_str
