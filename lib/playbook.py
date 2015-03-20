@@ -237,8 +237,13 @@ def _playbook_from_list(**kwargs):
                 dopop = True
             
             try:
+
+                playbook_params = params
+                if 'parameters' in plans_dict and type(plans_dict['parameters']) is dict:
+                    playbook_params = dict(playbook_params.items() + plans_dict['parameters'].items())
+
                 playbook_dict_tuple = _playbook_from_dict(plans=plans_dict,
-                                                          parameters=params)
+                                                          parameters=playbook_params)
                 try:
                     assert(playbook_dict_tuple is not None)
                     playbook_text_tuple_list.append(playbook_dict_tuple)

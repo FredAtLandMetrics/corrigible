@@ -15,7 +15,7 @@ Specific TODO resulting from #1 above
 4) Add sibling of parameters section, constants, that have overrideability in the opposite directory.  Make them occupy the same namespace as the parameters.  Make them override parameters. (Provides mechanism for ensuring values do not get unexpected overridden)
 5) should add a parameters_file: directive that would have same impact as parameters file (perhaps overrideable by the parameters section) but allow for referencing the same parameters file for multiple systems (and plans, I guess)
 6) should be possible to declare params in the plan reference (will make loops possible)
-7) it should be possible to declare lists in the params
+7) it should be possible to declare lists in the params [JUST CONFIRM...NO REASON THIS WON'T WORK]
 
 Wishlist
 ========

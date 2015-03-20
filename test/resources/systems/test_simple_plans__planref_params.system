@@ -1,0 +1,20 @@
+hosts:
+    - hostname: 'testhost'
+      hostgroup: 'testgroup'
+      ip_address: 1.2.3.4
+
+parameters:
+    sudouser: ubuntu
+    deployuser: deploy
+    sudo: yes
+    
+plans:
+    - plan: apt_upgrade
+      parameters:
+          sudouser: hank
+    - plan: install_cron
+    - plan: add_deploy_user
+    - files:
+        - source: toplevel.txt
+          destination: /tmp/test_toplevel.txt
+          mode: 0444
