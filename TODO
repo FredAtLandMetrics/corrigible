@@ -14,6 +14,8 @@ Specific TODO resulting from #1 above
 3) Sometimes I'm finding that it's not always easy to figure out exactly where things are going wrong.  I don't think it's necessarily worse than the problems you have with ansible, but it's not much better either.  A lot of the problems I end up having involve ordering plans.  The fix is always to set the prefix number on some plan file, but figuring out which one can be tricky.  So I'd like a utiltity called corrigible_tree that would print the plan execution tree.
 4) Add sibling of parameters section, constants, that have overrideability in the opposite directory.  Make them occupy the same namespace as the parameters.  Make them override parameters. (Provides mechanism for ensuring values do not get unexpected overridden)
 5) should add a parameters_file: directive that would have same impact as parameters file (perhaps overrideable by the parameters section) but allow for referencing the same parameters file for multiple systems (and plans, I guess)
+6) should be possible to declare params in the plan reference (will make loops possible)
+7) it should be possible to declare lists in the params
 
 Wishlist
 ========
