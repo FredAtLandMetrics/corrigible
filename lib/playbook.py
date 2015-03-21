@@ -330,6 +330,7 @@ def _playbook_from_dict__plan(plan_name, params):
 
 
 def _str_bool(v):
+    """convert a string rep of yes or true to a boolean True, all else to False"""
     try:
         assert((type(v) is str and v.lower() in ['yes', 'true']) or
                (type(v) is bool and bool(v)))
