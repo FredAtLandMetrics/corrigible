@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import json
 
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
@@ -71,8 +72,9 @@ class TestSimpleSystemConfig(CorrigibleTest):
         self.assertTrue(os.path.isfile(self.output_playbook_filepath))
         self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         s = self.playbook_as_struct()
-        self.assertTrue(s[0]['user'] == 'ubuntu')
-        self.assertTrue(s[0]['sudo'] == True)
+        # print json.dumps(s, sort_keys=True, indent=4, separators=(',', ': '))
+        self.assertTrue(s[1]['user'] == 'ubuntu')
+        self.assertTrue(s[1]['sudo'] == True)
 
     def test_plan_ordering_by_index(self):
         """after re-running corrigible on the simple plans test system config, test that the plans are ordered as per the index indicated is each's filename"""

@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import json
 
 from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
@@ -34,11 +35,12 @@ class TestSystemParams(CorrigibleTest):
     def test_system_parameters(self):
         self.regen()
         s = self.playbook_as_struct()
+        # print json.dumps(s, sort_keys=True, indent=4, separators=(',', ': '))
         self.assertTrue(type(s) is list)
         self.assertTrue(len(s) > 0)
-        self.assertTrue(type(s[0]) is dict)
-        self.assertTrue('user' in s[0])
-        self.assertTrue(s[0]['user'] == os.environ['USER'])
+        self.assertTrue(type(s[1]) is dict)
+        self.assertTrue('user' in s[1])
+        self.assertTrue(s[1]['user'] == os.environ['USER'])
         
 if __name__ == '__main__':
     unittest.main()   

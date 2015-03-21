@@ -26,13 +26,13 @@ def plan_hash_filepath(**kwargs):
    
 _hash_filepaths = None
 def plan_hash_filepath_exists(**kwargs):
+    """checks to see if the plan hash filepath exists (i.e. if the plan in its current form has already been included in the playbook)"""
     global _hash_filepaths
+
+    # read the hash filepaths from file if _hash_filepaths is None
     if _hash_filepaths is None:
-        print "DBG: hash file paths is none, rebuilding from file"
         with open('/tmp/corrigible_hashes_list', 'rb') as fh:
             _hash_filepaths = fh.read().split('\n')
-            print "DBG: filepaths list: {}".format(_hash_filepaths)
-    ret = os.path.basename(plan_hash_filepath(plan=kwargs['plan'])) in _hash_filepaths
-    print "DBG: plan_hash_filepath_exists(plan={}) returning {}".format(kwargs['plan'],ret)
-    return ret
-    #return os.path.isfile(plan_hash_filepath(**kwargs))
+
+    # return true if the plan hash filepath exists in _hsh_filepaths
+    return bool(os.path.basename(plan_hash_filepath(plan=kwargs['plan'])) in _hash_filepaths)

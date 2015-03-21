@@ -251,82 +251,92 @@ def _text_from_tuple_list(*args):
 
 
 def _playbook_from_dict__plan(plan_name, params):
-    
+
+    # raise an exception if the plan has already been included in the playbook
     if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
         raise DuplicatePlanInRocketMode()
-    
+
+    # index and filepath
     plan_ndx = plan_index(plan_name)
     plan_path = plan_filepath(plan_name)
-    
+
+    # read plan yaml contents from file
     try:
-                        
-        with open(plan_path, "r") as fh:
-            raw_yaml_str = fh.read()
-            try:
-                assert(params is not None and type(params) is dict and bool(params))
-                pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
-                template_render_params = copy.copy(params)
-            except AssertionError:
-                pass1_rendered_yaml_str = Template(raw_yaml_str).render()
-                template_render_params = {}
-                
-            pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
-            
-            try:
-                assert('parameters' in pass1_yaml_struct and \
-                       type(pass1_yaml_struct['parameters']) is dict and \
-                       bool(pass1_yaml_struct['parameters']))
-                for key,val in pass1_yaml_struct['parameters'].iteritems():
-                    try:
-                        assert(key in template_render_params)
-                    except AssertionError:
-                        template_render_params[key] = val
-            except AssertionError:
-                pass
-                
-            #print "template_render_params: {}".format(str(template_render_params))
-                
-            try:
-                assert(bool(template_render_params))
-                pass2_rendered_yaml_str = Template(raw_yaml_str).render(template_render_params)
-            except AssertionError:
-                pass2_rendered_yaml_str = Template(raw_yaml_str).render()
-            
-            yaml_struct = yaml.load(pass2_rendered_yaml_str)
-        
-            # so, now it's either a rendered ansible yml or a rendered plan yml
-            try:
-                assert(type(yaml_struct) is dict and 'plans' in yaml_struct)
-                
-                playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params)
-                try:
-                    assert(playbook_dict_output is not None)
-                    _, plan_text = playbook_dict_output
-                    return [(plan_ndx, "{}\n{}\n".format(plan_text,_hash_stanza_suffix(plan_name, params)))]
-                except AssertionError:
-                    return None
-            except AssertionError:
-                try:
-                    assert(type(yaml_struct) is list and len(yaml_struct) > 0)
-                    return [(plan_ndx, "{}\n{}\n".format(pass2_rendered_yaml_str,_hash_stanza_suffix(plan_name, params)))]
-                except AssertionError:
-                    raise UnparseablePlanFile()
+        fh = open(plan_path, "r")
+        raw_yaml_str = fh.read()
+        fh.close()
     except TypeError:
         raise PlanFileDoesNotExist(plan_name)
-    except UnknownPlanEncountered:
-        print "encountered error with {}".format(plan_path)
+
+    # PASS #1 - process the yaml contents to extract params
+    try:
+        if bool(params is not None and type(params) is dict and bool(params)):
+            pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
+            template_render_params = copy.copy(params)
+        else:
+            pass1_rendered_yaml_str = Template(raw_yaml_str).render()
+            template_render_params = {}
+        pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
+    except (yaml.ParserError, yaml.ScannerError) as e:
+        print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str)
         raise
-    except jinja2.exceptions.TemplateSyntaxError:
-        #print "ERR: Template syntax error in {}".format(plan_filepath)
-        raise        
+    except jinja2.TemplateSyntaxError as e:
+        print "ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath)
+        raise
+
+    # PASS #1 - set any parameters that have not been overriden by a declaration in a higher-level scope
+    if bool(
+        'parameters' in pass1_yaml_struct and
+        type(pass1_yaml_struct['parameters']) is dict and
+        bool(pass1_yaml_struct['parameters'])
+    ):
+
+        for key, val in pass1_yaml_struct['parameters'].iteritems():
+            if not bool(key in template_render_params):
+                template_render_params[key] = val
+
+    # PASS #2 - render the yaml
+    try:
+        if bool(template_render_params):
+            pass2_rendered_yaml_str = Template(raw_yaml_str).render(template_render_params)
+        else:
+            pass2_rendered_yaml_str = Template(raw_yaml_str).render()
+        yaml_struct = yaml.load(pass2_rendered_yaml_str)
+    except (yaml.ParserError, yaml.ScannerError) as e:
+        print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str)
+        raise
+    except jinja2.TemplateSyntaxError as e:
+        print "ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath)
+        raise
+
+    # process as either a corrigible plan or an ansible playbook
+    if bool(type(yaml_struct) is dict and 'plans' in yaml_struct):
+
+        # corrigible plan, recurse and add rocket mode hash suffix
+        playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params)
+
+        if bool(playbook_dict_output is not None):
+            _, plan_text = playbook_dict_output
+            return [(plan_ndx, "{}\n{}\n".format(plan_text, _hash_stanza_suffix(plan_name, params)))]
+        else:
+            return None
+    else:
+
+        # ansible plan, add rocket mode hash suffix
+        if bool(type(yaml_struct) is list and len(yaml_struct) > 0):
+            return [(plan_ndx, "{}\n{}\n".format(pass2_rendered_yaml_str, _hash_stanza_suffix(plan_name, params)))]
+        else:
+            raise UnparseablePlanFile()
+
 
 def _str_bool(v):
     try:
-        assert((type(v) is str and v.lower() in ['yes','true']) or
+        assert((type(v) is str and v.lower() in ['yes', 'true']) or
                (type(v) is bool and bool(v)))
         return True
     except AssertionError:
         return False
+
 
 def _playbook_from_dict__files_list(files_list, params, **kwargs):
     #print "files_list: {}".format(files_list)
@@ -383,8 +393,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                     
                     except Exception as e:
                         print(
-                            'unhandled exception encountered processing files list: ' +
-                            '{}, {}\n{}'. \
+                            'unhandled exception encountered processing files list: {}, {}\n{}'.\
                                 format(
                                     str(e.__class__.__name__), 
                                     str(e.args),
