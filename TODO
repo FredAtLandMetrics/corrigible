@@ -19,6 +19,7 @@ Wishlist
 ========
 1) fail-on-edited-files - to avoid losing local changes, store md5 hash for any files transferred with the file directive.  if the md5 hash doesn't match the stored one before re-copy, fail and alert
 2) script hooks - call a script before or after a run (or just use the index ordering) and, optionally, fail the whole run depending on the outcome of the script...use case: a script that checks to see if there have been any updates in the manifold repository before deploying
+3) promptable parameters - add a way to specify that some parameters be defined at runtime via prompt. Additionally, allow for use of the 'password type' so the password is hidden
 
 Tests
 =====
