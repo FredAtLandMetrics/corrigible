@@ -19,7 +19,33 @@ Wishlist
 ========
 1) fail-on-edited-files - to avoid losing local changes, store md5 hash for any files transferred with the file directive.  if the md5 hash doesn't match the stored one before re-copy, fail and alert
 2) script hooks - call a script before or after a run (or just use the index ordering) and, optionally, fail the whole run depending on the outcome of the script...use case: a script that checks to see if there have been any updates in the manifold repository before deploying
+2.5) add option to use parameter files
 3) promptable parameters - add a way to specify that some parameters be defined at runtime via prompt. Additionally, allow for use of the 'password type' so the password is hidden
+4) add npyscreen interface with scrolling capability
+5) add option to allow for a system/<name> structure above existing schema for system files like:
+
+   system:
+     pluto:
+       hosts:
+         - hostname: 'otherhost'
+           ip_address: 2.3.4.5
+       parameters:
+         someparam: testval
+       plans:
+         - plan: do_stuff
+     venus:
+       hosts: ...
+
+6) to #5, add ability to reference another system file like:
+
+   ...
+     mars: earth
+
+   such that, when it gets to mars, it will execute the plans in the earth system file using the parameters which would available to the system had it been defined as proscribed in #5 (overriding any parameters defined in the earth.system file)
+
+7) to #4, add a tab-style interface to allow simultaneous display of output from multiple systems defined in #5 and #6
+8) to #3 & #5 & 2.5, add top level parameters available to all systems in the schema
+9) to #2.5 and #8 and using example in #5 and #6, add: it should be possible to override promptable params (#3) in earth.system parameters using top-level parameters or parameter files such that, when firing up the multi-tabbed interface that shows the output from 10 simultaneous system deploys, the admin is prompted for all the required passwords at once, before the deploys begin.
 
 Tests
 =====
