@@ -46,6 +46,7 @@ Wishlist
 7) to #4, add a tab-style interface to allow simultaneous display of output from multiple systems defined in #5 and #6
 8) to #3 & #5 & 2.5, add top level parameters available to all systems in the schema
 9) to #2.5 and #8 and using example in #5 and #6, add: it should be possible to override promptable params (#3) in earth.system parameters using top-level parameters or parameter files such that, when firing up the multi-tabbed interface that shows the output from 10 simultaneous system deploys, the admin is prompted for all the required passwords at once, before the deploys begin.
+10) add support for ansible vault (http://docs.ansible.com/playbooks_vault.html)
 
 Tests
 =====
