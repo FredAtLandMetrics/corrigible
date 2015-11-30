@@ -9,7 +9,8 @@ from corrigible.test.lib.corrigible_test import CorrigibleTest
 from corrigible.lib.planhash import plan_hash_str
 from corrigible.lib.plan import plan_filepath
 
-script_dirpath = os.path.dirname( os.path.dirname( __file__ ) )
+import corrigible.lib.plan
+script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
