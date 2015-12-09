@@ -9,7 +9,6 @@ import subprocess
 import tempfile
 import traceback
 
-from jinja2 import Template
 
 from corrigible.lib.system import system_config
 from corrigible.lib.exceptions import \
@@ -33,8 +32,12 @@ from corrigible.lib.dirpaths import temp_exec_dirpath, hashes_dirpath
 from corrigible.lib.sys_default_params import sys_default_parameters
 from corrigible.lib.planhash import plan_hash_filepath, plan_hash_filepath_exists
 from corrigible.lib.rocketmode import rocket_mode
+from corrigible.lib.jinja_ext import ShellExtension, env
 
-jinja2.Environment(autoescape=False)
+# env = jinja2.Environment(autoescape=False, extensions=[ShellExtension])
+
+# jinja2.Environment(autoescape=False, extensions=[ShellExtension])
+# from jinja2 import Template
 
 MAX_PLAN_ORDER = 9999999
 
@@ -271,10 +274,10 @@ def _playbook_from_dict__plan(plan_name, params):
     # PASS #1 - process the yaml contents to extract params
     try:
         if bool(params is not None and type(params) is dict and bool(params)):
-            pass1_rendered_yaml_str = Template(raw_yaml_str).render(params)
+            pass1_rendered_yaml_str = env.from_string(raw_yaml_str).render(params)
             template_render_params = copy.copy(params)
         else:
-            pass1_rendered_yaml_str = Template(raw_yaml_str).render()
+            pass1_rendered_yaml_str = env.from_string(raw_yaml_str).render()
             template_render_params = {}
         pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
     except (yaml.ParserError, yaml.ScannerError) as e:
@@ -298,9 +301,9 @@ def _playbook_from_dict__plan(plan_name, params):
     # PASS #2 - render the yaml
     try:
         if bool(template_render_params):
-            pass2_rendered_yaml_str = Template(raw_yaml_str).render(template_render_params)
+            pass2_rendered_yaml_str = env.from_string(raw_yaml_str).render(template_render_params)
         else:
-            pass2_rendered_yaml_str = Template(raw_yaml_str).render()
+            pass2_rendered_yaml_str = env.from_string(raw_yaml_str).render()
         yaml_struct = yaml.load(pass2_rendered_yaml_str)
     except (yaml.ParserError, yaml.ScannerError) as e:
         print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str)
@@ -386,7 +389,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                             raw_template_contents_str = sfh.read()
                             fh, filepath = tempfile.mkstemp()
                             with open(filepath, 'w') as dfh:
-                                dfh.write(Template(raw_template_contents_str).render(params))
+                                dfh.write(env.from_string(raw_template_contents_str).render(params))
                             ansible_arg_val_str = filepath
                         
                     except AssertionError:
@@ -420,7 +423,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                                 raw_template_contents_str = sfh.read().encode('utf-8','ignore')
                                 fh, filepath = tempfile.mkstemp()
                                 with open(filepath, 'w') as dfh:
-                                    dfh.write(Template(raw_template_contents_str).render(params))
+                                    dfh.write(env.from_string(raw_template_contents_str).render(params))
                                 
                                 ansible_arg_val_str = filepath
                             

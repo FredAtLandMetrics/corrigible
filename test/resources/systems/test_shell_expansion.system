@@ -1,0 +1,18 @@
+hosts:
+    - hostname: 'localhost'
+      hostgroup: 'localhost'
+      ip_address: 127.0.0.1
+
+parameters:
+  someparam: 'hrm'
+  shell_gotten_param: {% shell cmd="echo blah" %}
+
+plans:
+    - inline:
+          order: 100
+          ansible:
+            - hosts: all
+              user: {{ USER }}
+              tasks:
+                - name: touch temp file
+                  shell: touch /tmp/test_shell_expansion.{{ shell_gotten_param }}.txt
