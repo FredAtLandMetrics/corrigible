@@ -32,7 +32,7 @@ def system_config(opts):
                 pass1_rendered_system_def_str = \
                     env.from_string(unrendered_system_def_str).render(**params)
                 
-                print "pass1: {}".format(pass1_rendered_system_def_str)
+                # print "pass1: {}".format(pass1_rendered_system_def_str)
                 
                 # get params in pass1
                 temp_conf = yaml.load(pass1_rendered_system_def_str)
@@ -59,13 +59,13 @@ def system_config(opts):
                 # final system config load
                 pass2_rendered_system_def_str = \
                     env.from_string(unrendered_system_def_str).render(**render_params)
-                print "pass2: {}".format(pass2_rendered_system_def_str)
+                # print "pass2: {}".format(pass2_rendered_system_def_str)
                 
                 # filter the output str (remove hosts that are excluded via selectors)
                 rendered_system_def_str = \
                     _filter_system_def(pass2_rendered_system_def_str, opts)
                 
-                print "rendered_system_def_str: {}".format(rendered_system_def_str)
+                # print "rendered_system_def_str: {}".format(rendered_system_def_str)
                 _system_conf = yaml.load(rendered_system_def_str)
                 
     except IOError:
