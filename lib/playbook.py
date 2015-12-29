@@ -280,7 +280,7 @@ def _playbook_from_dict__plan(plan_name, params):
             pass1_rendered_yaml_str = env.from_string(raw_yaml_str).render()
             template_render_params = {}
         pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
-    except (yaml.ParserError, yaml.ScannerError) as e:
+    except yaml.YAMLError as e:
         print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str)
         raise
     except jinja2.TemplateSyntaxError as e:
