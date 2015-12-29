@@ -2,6 +2,7 @@ import os
 import yaml
 import copy
 import jinja2
+import re
 
 # from jinja2 import Template
 
@@ -27,6 +28,9 @@ def system_config(opts):
             with open (system_config_filepath, "r") as system_def_fh: 
                 
                 params = dict(sys_default_parameters().items() + os.environ.items())
+
+                params["CMDLINE"] = os.environ["_"]
+                params["CMDLINE_WITHOUT_SELECTORS"] = re.sub(r'--selectors=[^\s]+','', params["CMDLINE"])
                 
                 unrendered_system_def_str = system_def_fh.read()
                 pass1_rendered_system_def_str = \
