@@ -1,12 +1,14 @@
 import os
 import subprocess
 import jinja2
-import jinjatag
-ShellExtension = jinjatag.JinjaTag()
+# import jinjatag
+from jinjatag import JinjaTag, simple_tag
+
+ShellExtension = JinjaTag()
 env = jinja2.Environment(autoescape=False, extensions=[ShellExtension])
 ShellExtension.init()
 
-@jinjatag.simple_tag
+@simple_tag
 def shell(cmd, chdir=".", **kwargs):
 
     original_dirpath = os.getcwd()
