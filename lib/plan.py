@@ -3,9 +3,6 @@ import re
 import heapq
 from corrigible.lib.dirpaths import systems_dirpath, plans_dirpath, files_dirpath
 
-#def _plan_files_iterator():
-    #for i in os.listdir(plans_dirpath()):
-        #yield i
 def _plan_files_iterator():
     for root, dirnames, filenames in os.walk(plans_dirpath()):
         for fn in filenames:
@@ -20,30 +17,20 @@ def _ensure_plan_filename_map():
     global _plan_sortorder_map
     global _plan_filepath_map
     
-    #print "_ensure_plan_filename_map entered"
-    
     if _plan_filename_map is None:
         _plan_filename_map = []
         _plan_sortorder_map = {}
         _plan_filepath_map = {}
-        #plan_files_dirpath = os.path.join(os.path.dirname(__file__),
-                                            #'..',
-                                            #'provision',
-                                            #'plans')
+
         plan_files_dirpath = plans_dirpath()
-        #print "plan files dirpath: {}".format(plan_files_dirpath)
         plan_iter = _plan_files_iterator()
         for filepath in plan_iter:
-            #print "listdir result: {}".format(filepath)
             if os.path.isfile(os.path.join(plan_files_dirpath,filepath)):
-                #print "examining: {}".format(filepath)
-                
+
                 plan_match = re.search(r"^(\d+)\_(.*)\.plan\.yml$", os.path.basename(filepath))
                 if plan_match:
                     sort_order = int(plan_match.group(1))
                     plan_name = plan_match.group(2)
-                    
-                    #print "sort_order: {}, plan_name: {}".format(sort_order, plan_name)
                     
                     _plan_sortorder_map[plan_name] = sort_order
                     
@@ -59,8 +46,6 @@ def _ensure_plan_filename_map():
                 if ansible_match:
                     sort_order = int(ansible_match.group(1))
                     plan_name = ansible_match.group(2)
-                    
-                    #print "sort_order: {}, plan_name: {}".format(sort_order, plan_name)
                     
                     _plan_sortorder_map[plan_name] = sort_order
                     
@@ -92,7 +77,6 @@ def plan_index(plan_name):
 
 def plan_filepath(plan_name):
     global _plan_filepath_map
-    #print "plan_filepath entered (plan: {})".format(plan_name)
     _ensure_plan_filename_map()
     try:
         return os.path.abspath(_plan_filepath_map[plan_name])
