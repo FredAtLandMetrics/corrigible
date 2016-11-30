@@ -6,13 +6,14 @@ import re
 
 # from jinja2 import Template
 
-from corrigible.lib.planfilestack import plan_file_stack_push
-from corrigible.lib.dirpaths import systems_dirpath
-from corrigible.lib.selector import run_selector_affirmative
-from corrigible.lib.sys_default_params import sys_default_parameters
-from corrigible.lib.jinja_ext import ShellExtension, env
+from .planfilestack import plan_file_stack_push
+from .dirpaths import systems_dirpath
+from .selector import run_selector_affirmative
+from .sys_default_params import sys_default_parameters
+#from .jinja_ext import ShellExtension, env
 
-# env = jinja2.Environment(autoescape=False, extensions=[ShellExtension])
+#env = jinja2.Environment(autoescape=False, extensions=[ShellExtension])
+env = jinja2.Environment(autoescape=False)
 
 SYSTEM_FILE_SUFFIX = "system"
 
@@ -24,7 +25,7 @@ def system_config(opts):
             system_name = opts["system"]
             plan_file_stack_push(system_name)
             system_config_filepath = os.path.join(systems_dirpath(), "{}.{}".format(system_name, SYSTEM_FILE_SUFFIX))
-            print "INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath)
+            print("INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath))
             with open (system_config_filepath, "r") as system_def_fh: 
                 
                 params = dict(sys_default_parameters().items() + os.environ.items())
@@ -46,7 +47,7 @@ def system_config(opts):
                 except KeyError:
                     parameter_dict = None
                 except Exception as e:
-                    print "E: {}".format(str(e))
+                    print("E: {}".format(str(e)))
                 #print "CP100!!!"
                 # merge in parameters (with os.environ trumping parameters)
                 try:
@@ -58,7 +59,7 @@ def system_config(opts):
                     #for key, val in os.environ.iteritems():
                         #render_params[key] = val
 
-                print "render params: {}".format(render_params)
+                print("render params: {}".format(render_params))
 
                 # final system config load
                 pass2_rendered_system_def_str = \
@@ -73,7 +74,7 @@ def system_config(opts):
                 _system_conf = yaml.load(rendered_system_def_str)
                 
     except IOError:
-        print "\nERR: system config not found at: {}, system_config will be None\n".format(system_config_filepath)
+        print("\nERR: system config not found at: {}, system_config will be None\n".format(system_config_filepath))
     return _system_conf
     
 #def _get_system_config_parameters(sysdef_str):
