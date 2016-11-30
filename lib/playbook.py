@@ -8,7 +8,7 @@ import os
 import subprocess
 import tempfile
 import traceback
-
+import six
 
 from .system import system_config
 from .exceptions import \
@@ -294,7 +294,7 @@ def _playbook_from_dict__plan(plan_name, params):
         bool(pass1_yaml_struct['parameters'])
     ):
 
-        for key, val in pass1_yaml_struct['parameters'].iteritems():
+        for key, val in six.iteritems(pass1_yaml_struct['parameters']):
             if not bool(key in template_render_params):
                 template_render_params[key] = val
 
@@ -470,7 +470,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
             files[order_as_str] = "{}{}".format(tasks_header, txt)
         
     ret = []
-    for order_as_str, txt in files.iteritems():
+    for order_as_str, txt in six.iteritems(files):
         ret.append((int(order_as_str), txt))
         
     print("RET: {}".format(str(ret)))
