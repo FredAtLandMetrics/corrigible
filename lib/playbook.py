@@ -10,8 +10,8 @@ import tempfile
 import traceback
 
 
-from corrigible.lib.system import system_config
-from corrigible.lib.exceptions import \
+from .system import system_config
+from .exceptions import \
     PlanFileDoesNotExist, \
     PlanOmittedByRunSelector, \
     UnknownPlanEncountered, \
@@ -22,17 +22,17 @@ from corrigible.lib.exceptions import \
     DuplicatePlanInRocketMode, \
     RequiredParameterPlansNotProvided, \
     MalformedInlineAnsibleSnippet
-from corrigible.lib.planfilestack import \
+from .planfilestack import \
     plan_file_stack_push, \
     plan_file_stack_pop, \
     plan_file_stack_as_str
-from corrigible.lib.plan import plan_index, plan_filepath
-from corrigible.lib.selector import run_selector_affirmative
-from corrigible.lib.dirpaths import temp_exec_dirpath, hashes_dirpath
-from corrigible.lib.sys_default_params import sys_default_parameters
-from corrigible.lib.planhash import plan_hash_filepath, plan_hash_filepath_exists
-from corrigible.lib.rocketmode import rocket_mode
-from corrigible.lib.jinja_ext import ShellExtension, env
+from .plan import plan_index, plan_filepath
+from .selector import run_selector_affirmative
+from .dirpaths import temp_exec_dirpath, hashes_dirpath
+from .sys_default_params import sys_default_parameters
+from .planhash import plan_hash_filepath, plan_hash_filepath_exists
+from .rocketmode import rocket_mode
+from .jinja_ext import ShellExtension, env
 
 # env = jinja2.Environment(autoescape=False, extensions=[ShellExtension])
 
