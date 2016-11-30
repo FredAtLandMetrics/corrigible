@@ -7,10 +7,10 @@ sys.path.append(join(dirname(__file__), '..'))
 import argparse
 import os
 
-from corrigible.lib.playbook import write_ansible_playbook, run_ansible_playbook, ansible_playbook_filepath, run_hashes_fetch_playbook
-from corrigible.lib.hostsfile import write_ansible_hosts, ansible_hostsfile_filepath
-from corrigible.lib.selector import set_run_selectors_list
-from corrigible.lib.rocketmode import rocket_mode
+from lib.playbook import write_ansible_playbook, run_ansible_playbook, ansible_playbook_filepath, run_hashes_fetch_playbook
+from lib.hostsfile import write_ansible_hosts, ansible_hostsfile_filepath
+from lib.selector import set_run_selectors_list
+from lib.rocketmode import rocket_mode
 
 SCRIPT_DIRPATH = os.path.dirname( __file__ )
 SOURCES_DIRPATH = os.path.join(SCRIPT_DIRPATH, '..')
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         run_hashes_fetch_playbook(options)
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
-        print "DBG: SETTING ROCKET MODE!"
+        print("DBG: SETTING ROCKET MODE!")
         rocket_mode(True)
         
     write_ansible_playbook(options)
