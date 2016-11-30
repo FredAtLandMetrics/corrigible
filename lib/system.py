@@ -3,7 +3,7 @@ import yaml
 import copy
 import jinja2
 import re
-
+import six
 # from jinja2 import Template
 
 from .planfilestack import plan_file_stack_push
