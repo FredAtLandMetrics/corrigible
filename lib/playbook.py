@@ -231,7 +231,7 @@ def _playbook_from_list(**kwargs):
 
 def _merge_args(args_base, args_adding):
     """add two dicts, return merged version"""
-    return dict(args_base.items() + args_adding.items())
+    return dict(list(args_base.items()) + list(args_adding.items()))
 
 
 def _text_from_tuple_list(*args):
