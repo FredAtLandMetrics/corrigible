@@ -20,7 +20,7 @@ def write_ansible_hosts(opts):
     except TypeError:
         #print "system_config: {}".format(str(mconf))
         if mconf is None:
-            print "ERR: No system config, not writing ansible hosts file"
+            print("ERR: No system config, not writing ansible hosts file")
             return
         else:
             raise
