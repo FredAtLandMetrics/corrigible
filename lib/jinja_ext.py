@@ -1,6 +1,3 @@
-# from jinja2 import nodes
-# from jinja2.ext import Extension
-# from jinja2.exceptions import TemplateSyntaxError
 import os
 import subprocess
 import jinja2
