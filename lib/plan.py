@@ -1,7 +1,7 @@
 import os
 import re
 import heapq
-from corrigible.lib.dirpaths import systems_dirpath, plans_dirpath, files_dirpath
+from .dirpaths import systems_dirpath, plans_dirpath, files_dirpath
 
 def _plan_files_iterator():
     for root, dirnames, filenames in os.walk(plans_dirpath()):
