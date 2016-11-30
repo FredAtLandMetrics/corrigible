@@ -96,13 +96,13 @@ def run_hashes_fetch_playbook(opts):
                 playbook_output = _playbook_hashes_prefix(params, fetch_hashes=True)
                 fh.write(playbook_output)
         except PlanFileDoesNotExist as e:
-            print "ERR: plan referenced for which no file was found: {}, stack: {}".\
-                format(str(e), plan_file_stack_as_str())
+            print("ERR: plan referenced for which no file was found: {}, stack: {}".\
+                format(str(e), plan_file_stack_as_str()))
         except AssertionError:
-            print "WARN: no plans defined!"
+            print("WARN: no plans defined!")
     except TypeError:
         if mconf is None:
-            print "ERR: No system config, not writing ansible playbook file"
+            print("ERR: No system config, not writing ansible playbook file")
             return
         else:
             raise
@@ -114,7 +114,7 @@ def write_ansible_playbook(opts):
     try:
         mconf = system_config(opts)
     except TypeError:
-        print "ERR: No system config, not writing ansible playbook file"
+        print("ERR: No system config, not writing ansible playbook file")
         return
 
     try:
@@ -130,15 +130,15 @@ def write_ansible_playbook(opts):
     params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
 
     if not bool(plans):
-        print "WARN: no plans defined!"
+        print("WARN: no plans defined!")
         return
 
     # get the list output from the plans list
     try:
         list_output = _playbook_from_list(plans=plans, parameters=params)
     except PlanFileDoesNotExist as e:
-        print "ERR: plan referenced for which no file was found: {}, stack: {}".\
-            format(str(e), plan_file_stack_as_str())
+        print("ERR: plan referenced for which no file was found: {}, stack: {}".\
+            format(str(e), plan_file_stack_as_str()))
         return
 
     # ensure list output is not None
@@ -174,9 +174,9 @@ def _filter_final_playbook_output(raw):
         as_string = yaml.dump(as_struct) 
         return as_string
     except (yaml.ParserError, yaml.ScannerError) as e:
-        print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw)
+        print("ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw))
     except AssertionError:
-        print "INFO: no playbook output to filter"
+        print("INFO: no playbook output to filter")
 
 
 def _playbook_from_list(**kwargs):
@@ -281,10 +281,10 @@ def _playbook_from_dict__plan(plan_name, params):
             template_render_params = {}
         pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
     except yaml.YAMLError as e:
-        print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str)
+        print("ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str))
         raise
     except jinja2.TemplateSyntaxError as e:
-        print "ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath)
+        print("ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath))
         raise
 
     # PASS #1 - set any parameters that have not been overriden by a declaration in a higher-level scope
@@ -306,10 +306,10 @@ def _playbook_from_dict__plan(plan_name, params):
             pass2_rendered_yaml_str = env.from_string(raw_yaml_str).render()
         yaml_struct = yaml.load(pass2_rendered_yaml_str)
     except (yaml.ParserError, yaml.ScannerError) as e:
-        print "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str)
+        print("ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw_yaml_str))
         raise
     except jinja2.TemplateSyntaxError as e:
-        print "ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath)
+        print("ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath))
         raise
 
     # process as either a corrigible plan or an ansible playbook
@@ -362,7 +362,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     
     files = {}
     for f in files_list:
-        print "f: {}".format(f)
+        print("f: {}".format(f))
         arg_strs = []
         for arg_tuple in arg_data:
             
@@ -384,7 +384,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
                                ('template' in f and _str_bool(f['template'])))
                         
                         # HERE!!!
-                        print "Got Template...params: {}".format(params)
+                        print("Got Template...params: {}".format(params))
                         with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
                             raw_template_contents_str = sfh.read()
                             fh, filepath = tempfile.mkstemp()
@@ -473,7 +473,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     for order_as_str, txt in files.iteritems():
         ret.append((int(order_as_str), txt))
         
-    print "RET: {}".format(str(ret))
+    print("RET: {}".format(str(ret)))
         
     return tuple(ret)            
     
@@ -552,7 +552,7 @@ def _playbook_from_dict(**kwargs):
                     
                     try:
                         
-                        print "plans dict: {}".format(plans_dict)
+                        print("plans dict: {}".format(plans_dict))
                         inline_snippet_container = plans_dict['inline']
                         try:
                             assert('ansible' in inline_snippet_container)
@@ -571,7 +571,7 @@ def _playbook_from_dict(**kwargs):
                     except KeyError:    
                         raise UnknownPlanEncountered()
             except UnparseablePlanFile as e:
-                print "ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str())
+                print("ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str()))
            
     except KeyError:
         raise RequiredParameterPlansNotProvided()
