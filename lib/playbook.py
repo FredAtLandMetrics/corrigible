@@ -32,9 +32,9 @@ from .dirpaths import temp_exec_dirpath, hashes_dirpath
 from .sys_default_params import sys_default_parameters
 from .planhash import plan_hash_filepath, plan_hash_filepath_exists
 from .rocketmode import rocket_mode
-from .jinja_ext import ShellExtension, env
+# from .jinja_ext import ShellExtension, env
 
-# env = jinja2.Environment(autoescape=False, extensions=[ShellExtension])
+env = jinja2.Environment(autoescape=False)
 
 # jinja2.Environment(autoescape=False, extensions=[ShellExtension])
 # from jinja2 import Template
