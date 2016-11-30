@@ -28,7 +28,7 @@ def system_config(opts):
             print("INFO: loading system config for: {}, at {}".format(system_name, system_config_filepath))
             with open (system_config_filepath, "r") as system_def_fh: 
                 
-                params = dict(sys_default_parameters().items() + os.environ.items())
+                params = dict(list(sys_default_parameters().items()) + list(os.environ.items()))
 
                 params["CMDLINE"] = os.environ["_"]
                 params["CMDLINE_WITHOUT_SELECTORS"] = re.sub(r'--selectors=[^\s]+','', params["CMDLINE"])
@@ -37,7 +37,7 @@ def system_config(opts):
                 pass1_rendered_system_def_str = \
                     env.from_string(unrendered_system_def_str).render(**params)
                 
-                # print "pass1: {}".format(pass1_rendered_system_def_str)
+                print("pass1: {}".format(pass1_rendered_system_def_str))
                 
                 # get params in pass1
                 temp_conf = yaml.load(pass1_rendered_system_def_str)
@@ -54,7 +54,7 @@ def system_config(opts):
                     assert(parameter_dict is None)
                     render_params = params
                 except AssertionError:
-                    render_params = dict(parameter_dict.items() + os.environ.items() + sys_default_parameters().items())
+                    render_params = dict(list(parameter_dict.items()) + list(os.environ.items()) + list(sys_default_parameters().items()))
                     #render_params = copy.copy(parameter_dict)
                     #for key, val in os.environ.iteritems():
                         #render_params[key] = val

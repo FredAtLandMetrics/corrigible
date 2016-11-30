@@ -88,7 +88,7 @@ def run_hashes_fetch_playbook(opts):
         except KeyError:
             params = {}
             
-        params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
+        params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
             
         try:
             assert(bool(plans))
@@ -127,7 +127,7 @@ def write_ansible_playbook(opts):
         params = mconf['parameters']
     except KeyError:
         params = {}
-    params = dict(params.items() + sys_default_parameters().items() + os.environ.items())
+    params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
 
     if not bool(plans):
         print("WARN: no plans defined!")
@@ -210,7 +210,7 @@ def _playbook_from_list(**kwargs):
             # build parameters to be passed into _playbook_from_dict, giving precedent to plan ref params, if present
             playbook_params = params
             if 'parameters' in plans_dict and type(plans_dict['parameters']) is dict:
-                playbook_params = dict(playbook_params.items() + plans_dict['parameters'].items())
+                playbook_params = dict(list(playbook_params.items()) + list(plans_dict['parameters'].items()))
 
             # get output from _playbook_from_dict and add to playbook_text_tuple_list
             playbook_dict_tuple = _playbook_from_dict(plans=plans_dict,
