@@ -306,4 +306,6 @@ Also, I've put up a [repository for examples](https://github.com/FredAtLandMetri
 
 Contact
 =======
-Feedback is welcomed.  Feel free to email me at [fred@landmetrics.com](fred@landmetrics.com).  I do have a bit of a spam problem, so please mention corrigible in the subject line.
+Feedback is welcomed.  Feel free to email me at [fred@frameworklabs.us](fred@frameworklabs.us).  I do have a bit of a spam problem, so please mention corrigible in the subject line.
+
+Also, head to [Framework Labs](http://frameworklabs.us) if you'd like to discuss working with me on a project!
