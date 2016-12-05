@@ -1,7 +1,7 @@
 import hashlib
 import os
-from corrigible.lib.plan import plan_filepath
-from corrigible.lib.dirpaths import hashes_dirpath
+from .plan import plan_filepath
+from .dirpaths import hashes_dirpath
 
 # from: http://stackoverflow.com/questions/3431825/generating-a-md5-checksum-of-a-file
 def _hashfile(afile, hasher, blocksize=65536):

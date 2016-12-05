@@ -1,7 +1,7 @@
 import os
 
-from corrigible.lib.system import system_config
-from corrigible.lib.dirpaths import temp_exec_dirpath
+from .system import system_config
+from .dirpaths import temp_exec_dirpath
 
 def write_ansible_hosts(opts):
     mconf = None
@@ -20,7 +20,7 @@ def write_ansible_hosts(opts):
     except TypeError:
         #print "system_config: {}".format(str(mconf))
         if mconf is None:
-            print "ERR: No system config, not writing ansible hosts file"
+            print("ERR: No system config, not writing ansible hosts file")
             return
         else:
             raise
