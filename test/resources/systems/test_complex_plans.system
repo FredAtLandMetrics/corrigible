@@ -3,18 +3,13 @@ hosts:
       ip_address: 2.3.4.5
     - hostname: 'testhost'
       ip_address: 1.2.3.4
-      run_selectors:               # optional...ALWAYS targetted if unspecified
+      run_selectors:
           include:
-            # - ALL                # if present, matches all run selectors
             - update_dnsservers
           exclude:
-            - restart_webservers   # useless as spec'd, handy if including ALL
+            - restart_webservers
     - hostname: 'otherhost'
       ip_address: 2.3.4.5
-      ## run_selectors:     # default to all inclusive run selectors when not specified
-      ##   include:
-      ##     - ALL
-      
 
 parameters:
     sudouser: ubuntu
@@ -35,3 +30,5 @@ plans:
         - source: toplevel.txt
           destination: /tmp/test_toplevel.txt
           mode: 0444
+    - plan: add_misc_users_grp_b
+    - plan: add_misc_users_grp_a
