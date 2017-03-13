@@ -42,11 +42,11 @@ def ansible_playbook_filepath(opts):
     """returns a filepath to the ansible playbook that is the corrigible output"""
     try:
         output_filepath = opts["playbook_output_file"]
-        assert(output_filepath is not None)
-        return output_filepath
-    except (AssertionError, KeyError):
-        return os.path.join(temp_exec_dirpath(),
-                            "provision_{}.playbook".format(opts['system']))
+        if output_filepath is not None:
+            return output_filepath
+    except (KeyError):
+        pass
+    return os.path.join(temp_exec_dirpath(), "provision_{}.playbook".format(opts['system']))
 
 
 def run_ansible_playbook(**kwargs):
@@ -68,41 +68,38 @@ def run_ansible_playbook(**kwargs):
     )
 
 
-def run_hashes_fetch_playbook(opts):
+def write_hashes_fetch_playbook(opts):
     """fetch rocketmode hashes from remote machine"""
-    mconf = None
     try:
         mconf = system_config(opts)
-        
-        try:
-            plans = mconf['plans']
-        except KeyError:
-            plans = {}
-            
-        try:
-            params = mconf['parameters']
-        except KeyError:
-            params = {}
-            
-        params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
-            
-        try:
-            assert(bool(plans))
-            with open(ansible_playbook_filepath(opts), "w") as fh:
-                playbook_output = _playbook_hashes_prefix(params, fetch_hashes=True)
-                fh.write(playbook_output)
-        except PlanFileDoesNotExist as e:
-            print("ERR: plan referenced for which no file was found: {}, stack: {}".\
-                format(str(e), plan_file_stack_as_str()))
-        except AssertionError:
-            print("WARN: no plans defined!")
     except TypeError:
-        if mconf is None:
-            print("ERR: No system config, not writing ansible playbook file")
-            return
-        else:
-            raise
-    
+        print("ERR: No system config, not writing ansible playbook file")
+        return
+
+    # get plans and params
+    plans = mconf['plans'] if 'plans' in mconf else {}
+    params = mconf['parameters'] if 'parameters' in mconf else {}
+
+    # augment params with sys params and os environ variables
+    params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
+
+    # handle no plans
+    if not bool(plans):
+        print("WARN: no plans defined!")
+        return
+
+    # handle unknown plan
+    try:
+        playbook_output = _playbook_hashes_prefix(params, fetch_hashes=True)
+    except PlanFileDoesNotExist as e:
+        print("ERR: plan referenced for which no file was found: {}, stack: {}".\
+            format(str(e), plan_file_stack_as_str()))
+        raise
+
+    # write the playbook output
+    with open(ansible_playbook_filepath(opts), "w") as fh:
+        fh.write(playbook_output)
+
 
 def write_ansible_playbook(opts):
     """main corrigible output function, writes ansible playbook"""
@@ -113,16 +110,9 @@ def write_ansible_playbook(opts):
         print("ERR: No system config, not writing ansible playbook file")
         return
 
-    try:
-        plans = mconf['plans']
-    except KeyError:
-        plans = {}
-
-    # assemble params
-    try:
-        params = mconf['parameters']
-    except KeyError:
-        params = {}
+    # get plans and params
+    plans = mconf['plans'] if 'plans' in mconf else {}
+    params = mconf['parameters'] if 'parameters' in mconf else {}
     params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
 
     if not bool(plans):
@@ -164,24 +154,21 @@ def __write_to_playbook(content, opts):
 
 def _filter_final_playbook_output(raw):
     """for right now, just load as yaml and dump it back out...just a placeholder for possible future use"""
+    if type(raw) is not str or not bool(raw):
+        print("INFO: no playbook output to filter")
+        return
     try:
-        assert(type(raw) is str and bool(raw))
         as_struct = yaml.load(raw)
         as_string = yaml.dump(as_struct) 
         return as_string
     except (yaml.ParserError, yaml.ScannerError) as e:
         print("ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw))
-    except AssertionError:
-        print("INFO: no playbook output to filter")
 
 
 def _playbook_from_list(**kwargs):
     """produces playbook output from a plans list (as in what results from a yaml load of a plan file)"""
 
-    try:
-        params = kwargs['parameters']
-    except KeyError:
-        params = {}
+    params = kwargs['parameters'] if 'parameters' in kwargs else {}
 
     # validate plans list parameter
     try:
@@ -201,21 +188,21 @@ def _playbook_from_list(**kwargs):
             plan_file_stack_push('files')
             dopop = True
 
+        # build parameters to be passed into _playbook_from_dict, giving precedent to plan ref params, if present
+        playbook_params = params
+        if 'parameters' in plans_dict and type(plans_dict['parameters']) is dict:
+            playbook_params = dict(list(playbook_params.items()) + list(plans_dict['parameters'].items()))
+
+        playbook_dict_tuple = None
         try:
-
-            # build parameters to be passed into _playbook_from_dict, giving precedent to plan ref params, if present
-            playbook_params = params
-            if 'parameters' in plans_dict and type(plans_dict['parameters']) is dict:
-                playbook_params = dict(list(playbook_params.items()) + list(plans_dict['parameters'].items()))
-
             # get output from _playbook_from_dict and add to playbook_text_tuple_list
             playbook_dict_tuple = _playbook_from_dict(plans=plans_dict,
                                                       parameters=playbook_params)
-            if playbook_dict_tuple is not None:
-                playbook_text_tuple_list.append(playbook_dict_tuple)
-
         except (PlanOmittedByRunSelector, DuplicatePlanInRocketMode):
             pass
+
+        if playbook_dict_tuple is not None:
+            playbook_text_tuple_list.append(playbook_dict_tuple)
 
         # pop file ref from the plan file stack
         if dopop:
@@ -250,6 +237,9 @@ def _text_from_tuple_list(*args):
 
 
 def _playbook_from_dict__plan(plan_name, params):
+
+    """given a plan name and any params from an overriding context, return a list containing a tuple
+    of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
 
     # raise an exception if the plan has already been included in the playbook
     if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
@@ -315,7 +305,7 @@ def _playbook_from_dict__plan(plan_name, params):
         playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params)
 
         if bool(playbook_dict_output is not None):
-            _, plan_text = playbook_dict_output
+            _, plan_text = playbook_dict_output[0]
             return [(plan_ndx, "{}\n{}\n".format(plan_text, _hash_stanza_suffix(plan_name, params)))]
         else:
             return None
@@ -330,26 +320,20 @@ def _playbook_from_dict__plan(plan_name, params):
 
 def _str_bool(v):
     """convert a string rep of yes or true to a boolean True, all else to False"""
-    try:
-        assert((type(v) is str and v.lower() in ['yes', 'true']) or
-               (type(v) is bool and bool(v)))
+    if (type(v) is str and v.lower() in ['yes', 'true']) or \
+        (type(v) is bool and bool(v)):
         return True
-    except AssertionError:
-        return False
+    return False
 
 
 def _playbook_from_dict__files_list(files_list, params, **kwargs):
-    #print "files_list: {}".format(files_list)
-    try:
-        assert('sudouser' in params)
-    except AssertionError:
+    """given the files list and a list of params from an overriding context, return a list containing a tuple
+    of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
+
+    # insist on sudo
+    if 'sudouser' not in params:
         raise NoSudoUserParameterDefined()
-    
-    tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
-    
-    output_prefix = '    - copy: '
-    output_suffix = '\n'
-    
+
     arg_data = (('src', ['source', 'src']),
                 ('dest', ['destination', 'dest', 'dst']),
                 ('mode', 'mode'),
@@ -358,236 +342,151 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     
     files = {}
     for f in files_list:
-        print("f: {}".format(f))
+        # print("f: {}".format(f))
         arg_strs = []
         for arg_tuple in arg_data:
             
             ansible_arg_key_str, corrigible_arg_keys = arg_tuple
-            #print "key: {}".format(str(corrigible_arg_keys))
+            #print("key: {}".format(str(corrigible_arg_keys)))
             if (type(corrigible_arg_keys) is not list):
                 corrigible_arg_keys = [corrigible_arg_keys]
                 
             for corrigible_arg_key in corrigible_arg_keys:
                 
+                # handle the various acceptable forms of source, dest
                 newargstr = None
-                try:
-                    assert(corrigible_arg_key in kwargs)
+                if corrigible_arg_key in kwargs:
                     ansible_arg_val_str = kwargs[corrigible_arg_key]
-                    
-                    try:
-                        assert(ansible_arg_key_str == 'src')
-                        assert(('template' in kwargs and _str_bool(kwargs['template'])) or
-                               ('template' in f and _str_bool(f['template'])))
-                        
-                        # HERE!!!
-                        print("Got Template...params: {}".format(params))
-                        with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
-                            raw_template_contents_str = sfh.read()
-                            fh, filepath = tempfile.mkstemp()
-                            with open(filepath, 'w') as dfh:
-                                dfh.write(env.from_string(raw_template_contents_str).render(params))
-                            ansible_arg_val_str = filepath
-                        
-                    except AssertionError:
-                        pass
-                    
-                    except Exception as e:
-                        print(
-                            'unhandled exception encountered processing files list: {}, {}\n{}'.\
-                                format(
-                                    str(e.__class__.__name__), 
-                                    str(e.args),
-                                    traceback.format_exc(),
-                                )
-                        )
-                    
-                    newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
-                    break
-                except AssertionError:
-                    try:
-                        assert(corrigible_arg_key in f)
-                        assert(newargstr is None)
-                        ansible_arg_val_str = f[corrigible_arg_key]
-                        
-                        try:
-                            assert(ansible_arg_key_str == 'src')
-                            assert(('template' in kwargs and _str_bool(kwargs['template'])) or
-                                ('template' in f and _str_bool(f['template'])))
-                            
-                            # HERE!!!
+
+                    if ansible_arg_key_str == 'src':
+                        if ('template' in kwargs and _str_bool(kwargs['template'])) or \
+                               ('template' in f and _str_bool(f['template'])):
                             with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
-                                raw_template_contents_str = sfh.read().encode('utf-8','ignore')
+                                raw_template_contents_str = sfh.read()
                                 fh, filepath = tempfile.mkstemp()
                                 with open(filepath, 'w') as dfh:
                                     dfh.write(env.from_string(raw_template_contents_str).render(params))
-                                
                                 ansible_arg_val_str = filepath
-                            
-                        except AssertionError:
-                            pass
-                         
-                        except Exception as e:
-                            print(
-                                'unhandled exception encountered processing files list: ' +
-                                '{}, {}\n{}'. \
-                                    format(
-                                        str(e.__class__.__name__), 
-                                        str(e.args),
-                                        traceback.format_exc(),
-                                    )
-                            )
-                        
-                        newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
-                    except AssertionError:
-                        continue   # I know, I know...it seems more explicit
-                    
+                    newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
+
+                elif corrigible_arg_key in f and newargstr is None:
+                    ansible_arg_val_str = f[corrigible_arg_key]
+
+                    if ansible_arg_key_str == 'src':
+                        if ('template' in kwargs and _str_bool(kwargs['template'])) or \
+                            ('template' in f and _str_bool(f['template'])):
+                            # HERE!!!
+                            with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
+                                raw_template_contents_str = str(sfh.read().encode('utf-8','ignore'))
+
+                                # print("raw template contents str: {}".format(raw_template_contents_str))
+
+                                fh, filepath = tempfile.mkstemp()
+                                with open(filepath, 'w') as dfh:
+                                    dfh.write(env.from_string(raw_template_contents_str).render(params))
+
+                                ansible_arg_val_str = filepath
+
+
+                    newargstr = '{}={}'.format(ansible_arg_key_str, ansible_arg_val_str)
+
                 if newargstr is not None:
                     arg_strs.append(newargstr)
+
+        # populate files dict with key: order, val: copy stanzas for that order level
+        copy_directive_str = '    - copy: {}\n'.format(" ".join(arg_strs))
+        order_int = int(kwargs['order']) if 'order' in kwargs else 0
+        order_str = str(order_int)
         try:
-            assert(len(arg_strs) > 0)
-        except AssertionError:
-            continue
-        
-        txt = output_prefix + " ".join(arg_strs) + output_suffix
-        
-        order = '0'
-        try:
-            order = kwargs['order']
+            files[order_str] += copy_directive_str
         except KeyError:
-            try:
-                order = f['order']
-            except KeyError:
-                pass
-        order_as_str = str(order)
-        
-        try:
-            files[order_as_str] += txt
-        except KeyError:
-            files[order_as_str] = "{}{}".format(tasks_header, txt)
-        
+            tasks_header = '- hosts: all\n  user: {}\n  sudo: True\n  tasks:\n'.format(params['sudouser'])
+            files[order_str] = "{}{}".format(tasks_header, copy_directive_str)
+
+    # return files dict in tuple form
     ret = []
-    for order_as_str, txt in six.iteritems(files):
-        ret.append((int(order_as_str), txt))
-        
-    print("RET: {}".format(str(ret)))
-        
-    return tuple(ret)            
+    for order_str, txt in six.iteritems(files):
+        ret.append((int(order_str), txt))
+    return tuple(ret)
     
     
 def _playbook_from_dict__files_dict(files_dict, params):
-    try:
-        assert("list" in files_dict)
-    except AssertionError:
+    """given a files dict and a list of params from an overriding context, return a list containing a tuple
+    of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
+    if "list" not in files_dict:
         raise FilesDictLacksListKey()
-    try:
-        assert("parameters" in files_dict and bool(files_dict["parameters"]))
+
+    if "parameters" in files_dict and bool(files_dict["parameters"]):
         files_params = files_dict["parameters"]
         return _playbook_from_dict__files_list(files_dict["list"], params, **files_params)
-    except AssertionError:
-        return _playbook_from_dict__files_list(files_dict["list"], params)
-    
+    return _playbook_from_dict__files_list(files_dict["list"], params)
     
     
 def _playbook_from_dict__files(files_list, params):
-    
-    #print "params: {}".format(params)
-    try:
-        assert(type(files_list) is list and bool(files_list))
+    """given a files list and a list of params from an overriding context, return a list containing a tuple
+    of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
+    if type(files_list) is list and bool(files_list):
         return _playbook_from_dict__files_list(files_list, params)
-    except AssertionError:
-        assert(type(files_list) is dict and bool(files_list))
+    elif type(files_list) is dict and bool(files_list):
         return _playbook_from_dict__files_dict(files_list, params)
-    except Exception:
-        raise FilesSectionEmpty()
+
     
 def _playbook_from_dict__inline(snippet, order):
+    """given a snippet in dict form and an order int, return a list containing a tuple
+    of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
     return [(order, yaml.dump(snippet))]
 
 def _playbook_from_dict(**kwargs):
-    
-    try:
-        params = kwargs['parameters']
-    except KeyError:
-        params = {}    
-    
-    try:
-        plans_dict = kwargs['plans']
-        #print "plans({}), parameters({})".format(kwargs['plans'], params)
-        
-        try:
-            params = _merge_args(plans_dict['parameters'], params)
-        except KeyError:
-            pass
-        
-        try:
-            playbook_output =  _playbook_from_list(plans=plans_dict['plans'], parameters=params)
-            return MAX_PLAN_ORDER, playbook_output
-        except KeyError:
-            
-            # handle plan type: plan file
-            try:
-                plan_name = plans_dict['plan']
-                #print "plan name: {}".format(plan_name)
-                
-                if 'run_selectors' in plans_dict and \
-                   not run_selector_affirmative(plans_dict['run_selectors']):
-                    raise PlanOmittedByRunSelector()
-                
-                return _playbook_from_dict__plan(plan_name, params)
-            except KeyError:
-                
-                try:
-                    
-                    # handle plan type: files
-                    files_list = plans_dict['files']
-                    #print "files_list: {}".format(str(files_list))
-                    ret = _playbook_from_dict__files(files_list, params)
-                    #print "ret: {}".format(ret)
-                    return ret
-                except KeyError:
-                    
-                    try:
-                        
-                        print("plans dict: {}".format(plans_dict))
-                        inline_snippet_container = plans_dict['inline']
-                        try:
-                            assert('ansible' in inline_snippet_container)
-                            try:
-                                order = inline_snippet_container['order']
-                            except KeyError:
-                                order = 0
-                                
-                            return _playbook_from_dict__inline(inline_snippet_container['ansible'], order)
-                            
-                        except AssertionError:
-                            raise MalformedInlineAnsibleSnippet()
-                        
-                        
-                        # return snippets as list of (order, ansible string)
-                    except KeyError:    
-                        raise UnknownPlanEncountered()
-            except UnparseablePlanFile as e:
-                print("ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str()))
-           
-    except KeyError:
+
+    if 'plans' not in kwargs:
         raise RequiredParameterPlansNotProvided()
+    plans_dict = kwargs['plans']
+
+    # if parameters defined in plans dict, merge with params from overriding contexts
+    overriding_params = kwargs['parameters'] if 'parameters' in kwargs else {}
+    params = overriding_params if 'parameters' not in plans_dict else _merge_args(plans_dict['parameters'], overriding_params)
+
+    if 'plans' in plans_dict:
+        return [(MAX_PLAN_ORDER, _playbook_from_list(plans=plans_dict['plans'], parameters=params))]
+
+    # handle plan type: plan file
+    if 'plan' in plans_dict:
+        if 'run_selectors' in plans_dict and not run_selector_affirmative(plans_dict['run_selectors']):
+            raise PlanOmittedByRunSelector()
+        try:
+            return _playbook_from_dict__plan(plans_dict['plan'], params)
+        except UnparseablePlanFile as e:
+            print("ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str()))
+            raise
+
+    elif 'files' in plans_dict:
+        return _playbook_from_dict__files(plans_dict['files'], params)
+
+    elif 'inline' in plans_dict:
+        if 'ansible' not in plans_dict['inline']:
+            raise MalformedInlineAnsibleSnippet()
+        return _playbook_from_dict__inline(
+            plans_dict['inline']['ansible'],
+            plans_dict['inline']['order'] if 'order' in plans_dict['inline'] else 0
+        )
+    else:
+        raise UnknownPlanEncountered()
 
 
 def _playbook_hashes_prefix(params, **kwargs):
     """build the playbook hashes prefix stanza"""
-    try:
-        assert(bool(kwargs['fetch_hashes']))
+    fetch_hashes_str = ""
+    if "fetch_hashes" in kwargs:
         fetch_hashes_str = """
     - name: write listing of hashes dir to file
       shell: /bin/ls {} > /tmp/corrigible_hashes_list_remote
     - name: fetch the hashes files list
       fetch: src=/tmp/corrigible_hashes_list_remote dest=/tmp/corrigible_hashes_list flat=yes
         """.format(hashes_dirpath())
-    except (AssertionError, KeyError):
-        fetch_hashes_str = ""
 
-    try:
-        ret = """
+    if 'rootuser' in params:
+
+        return """
 - hosts: all
   user: {}
   sudo: True
@@ -596,16 +495,14 @@ def _playbook_hashes_prefix(params, **kwargs):
       file: state=directory path={}
       {}
         """.format(params['rootuser'], hashes_dirpath(), fetch_hashes_str)
-        return ret
-    except KeyError:
-        ret = """
+    else:
+        return """
 - hosts: all
   tasks:
     - name: ensure hashes dir exists
       file: state=directory path={}
       {}
         """.format(hashes_dirpath(), fetch_hashes_str)
-        return ret
 
 
 def _hash_stanza_suffix(plan_name, params):
