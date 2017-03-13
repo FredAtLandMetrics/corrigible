@@ -34,14 +34,11 @@ class TestFilesWithParameters(CorrigibleTest):
     def test_params_in_files(self, **kwargs):
         self.regen()
         s = self.playbook_as_struct()
-        print "s: {}".format(s)
         tasksrec = {}
         tasksrec['file3'] = s[1]['tasks'][0]
-        #print "tr:{}".format(tasksrec['file3'])
         self.assertTrue('copy' in tasksrec['file3'])
         self.assertTrue('file3' in tasksrec['file3']['copy'])
         tasksrec['file2'] = s[2]['tasks'][1]
-        #print "tr:{}".format(tasksrec['file3'])
         self.assertTrue('copy' in tasksrec['file2'])
         self.assertTrue('file2' in tasksrec['file2']['copy'])
         
