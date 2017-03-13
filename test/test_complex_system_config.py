@@ -87,21 +87,30 @@ class TestComplexSystemConfig(CorrigibleTest):
         self.assertTrue(tasksrec['apt_upgrade']['name'].strip() == "ensure latest os version")
         
         #    add_misc_users_grp_b (35)
-        tasksrec['add_misc_users_grp_c'] = s[8]['tasks'][0]
-        self.assertTrue('user' in tasksrec['add_misc_users_grp_c'])
-        self.assertTrue(re.search(r'toplevel\.txt',tasksrec['copy_toplevel_text_file']['copy']))
-        self.assertTrue(tasksrec['add_misc_users_grp_c']['name'].strip() == "add sara")
+        tasksrec['add_misc_users_grp_b'] = s[8]['tasks'][0]
+        self.assertTrue('user' in tasksrec['add_misc_users_grp_b'])
+        self.assertTrue(tasksrec['add_misc_users_grp_b']['name'].strip() == "add tim")
 
         # file copy from 57_plans_test.plan.yml
         tasksrec['copy_some_file'] = s[10]['tasks'][0]
         self.assertTrue('copy' in tasksrec['copy_some_file'])
         self.assertTrue(re.search(r'testfile\.txt',tasksrec['copy_some_file']['copy']))
-        
+
+        #    add_misc_users_grp_c (35)
+        tasksrec['add_misc_users_grp_c'] = s[11]['tasks'][0]
+        self.assertTrue('user' in tasksrec['add_misc_users_grp_c'])
+        self.assertTrue(tasksrec['add_misc_users_grp_c']['name'].strip() == "add sara")
+
         #    apt_add_packages (81)
-        tasksrec['apt_add_packages'] = s[11]['tasks'][0]
+        tasksrec['apt_add_packages'] = s[13]['tasks'][0]
+        print("tasksrec[apt_add_packages]: {}".format(tasksrec['apt_add_packages']))
         self.assertTrue('apt' in tasksrec['apt_add_packages'])
         self.assertTrue(tasksrec['apt_add_packages']['name'].strip() == "install some apt packages")
 
+        # add_misc_users_grp_a (75)
+        tasksrec['add_misc_users_grp_a'] = s[16]['tasks'][0]
+        self.assertTrue('user' in tasksrec['add_misc_users_grp_a'])
+        self.assertTrue(tasksrec['add_misc_users_grp_a']['name'].strip() == "add frank")
 
 if __name__ == '__main__':
     unittest.main()   
