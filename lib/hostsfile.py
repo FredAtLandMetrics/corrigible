@@ -10,7 +10,6 @@ def write_ansible_hosts(opts):
         hostrecs = mconf['hosts']
         
         hosts_filepath = ansible_hostsfile_filepath(opts)
-        #print "writing to: {}".format(hosts_filepath)
         with open(hosts_filepath, "w") as fh:
             fh.write("[all]\n")
             
@@ -18,7 +17,6 @@ def write_ansible_hosts(opts):
                 fh.write("{} ansible_ssh_host={}\n".format(hostrec['hostname'], hostrec['ip_address']))
             fh.write("\n")
     except TypeError:
-        #print "system_config: {}".format(str(mconf))
         if mconf is None:
             print("ERR: No system config, not writing ansible hosts file")
             return
