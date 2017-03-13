@@ -34,8 +34,14 @@ class TestTemplateFiles(CorrigibleTest):
                               skip_cleanup=True)
 
     def test_files_template(self):
+
+        # generate the playbook
         self.regen()
+
+        # read the yaml playbook into a dict/array structure
         s = self.playbook_as_struct()
+
+        # locate the copy directive
         self.assertTrue(type(s) is list and len(s) > 0)
         self.assertTrue(type(s[1]) is dict)
         self.assertTrue('tasks' in s[1])
@@ -44,18 +50,18 @@ class TestTemplateFiles(CorrigibleTest):
         copy_dict = s[1]['tasks'][0]
         self.assertTrue('copy' in copy_dict)
         copy_directive_str = copy_dict['copy']
+
+        # get the template output filename
         m = re.match(r'src\=([^\s]+)', copy_directive_str)
         self.assertTrue(m is not None)
-        #print "m: {}".format(m.group(1))
         template_output_filepath = os.path.join(script_dirpath,'resources',m.group(1))
-        
-        template_output = None
+
+        # confirm that "chicken" from the animal param in the system file is in the template output
         with open(template_output_filepath, "r") as fh:
             template_output = fh.read()
-            
         self.assertTrue(type(template_output) is str and bool(template_output))
         self.assertTrue('chicken' in template_output)
-        
+
 if __name__ == '__main__':
     unittest.main()   
         
