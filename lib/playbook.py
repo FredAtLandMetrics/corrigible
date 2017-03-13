@@ -70,11 +70,7 @@ def run_ansible_playbook(**kwargs):
 
 def write_hashes_fetch_playbook(opts):
     """fetch rocketmode hashes from remote machine"""
-    try:
-        mconf = system_config(opts)
-    except TypeError:
-        print("ERR: No system config, not writing ansible playbook file")
-        return
+    mconf = system_config(opts)
 
     # get plans and params
     plans = mconf['plans'] if 'plans' in mconf else {}
@@ -104,11 +100,7 @@ def write_hashes_fetch_playbook(opts):
 def write_ansible_playbook(opts):
     """main corrigible output function, writes ansible playbook"""
 
-    try:
-        mconf = system_config(opts)
-    except TypeError:
-        print("ERR: No system config, not writing ansible playbook file")
-        return
+    mconf = system_config(opts)
 
     # get plans and params
     plans = mconf['plans'] if 'plans' in mconf else {}
