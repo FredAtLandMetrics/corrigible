@@ -8,7 +8,7 @@ sys.path.append(join(dirname(__file__), '..'))
 import argparse
 import os
 
-from lib.playbook import write_ansible_playbook, run_ansible_playbook, ansible_playbook_filepath, run_hashes_fetch_playbook
+from lib.playbook import write_ansible_playbook, run_ansible_playbook, ansible_playbook_filepath, write_hashes_fetch_playbook
 from lib.hostsfile import write_ansible_hosts, ansible_hostsfile_filepath
 from lib.selector import set_run_selectors_list
 from lib.rocketmode import rocket_mode
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     
     write_ansible_hosts(options)
     if 'rocket_mode' in options and bool(options['rocket_mode']):
-        run_hashes_fetch_playbook(options)
+        write_hashes_fetch_playbook(options)
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
         print("DBG: SETTING ROCKET MODE!")
