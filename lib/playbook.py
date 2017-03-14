@@ -168,6 +168,7 @@ def _playbook_from_list(**kwargs):
     except KeyError:
         raise RequiredParameterPlansNotProvided()
 
+    # build a list of tuples of the form: (sort_order, post-processed ansible directives as string)
     playbook_text_tuple_list = []
     for plans_dict in plans_list:
 
@@ -509,7 +510,7 @@ def _hash_stanza_suffix(plan_name, params):
     - name: touch plan hash file
       shell: touch {}
 
-        """.format(params['rootuser'], plan_hash_filepath(plan=plan_name))
+        """.format(params['rootuser'], plan_hash_filepath(plan_name))
     except KeyError:
         ret = """
 - hosts: all
@@ -517,7 +518,7 @@ def _hash_stanza_suffix(plan_name, params):
     - name: touch plan hash file
       shell: touch {}
 
-        """.format(plan_hash_filepath(plan=plan_name))
+        """.format(plan_hash_filepath(plan_name))
     return ret
 
 
