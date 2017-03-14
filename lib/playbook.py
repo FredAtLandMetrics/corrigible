@@ -384,7 +384,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
 
         # populate files dict with key: order, val: copy stanzas for that order level
         copy_directive_str = '    - copy: {}\n'.format(" ".join(arg_strs))
-        order_int = int(kwargs['order']) if 'order' in kwargs else 0
+        order_int = int(kwargs['order']) if 'order' in kwargs else MIN_PLAN_ORDER
         order_str = str(order_int)
         try:
             files[order_str] += copy_directive_str
@@ -451,7 +451,7 @@ def _playbook_from_dict(plans, parameters):
             raise MalformedInlineAnsibleSnippet()
         return _playbook_from_dict__inline(
             plans['inline']['ansible'],
-            plans['inline']['order'] if 'order' in plans['inline'] else 0
+            plans['inline']['order'] if 'order' in plans['inline'] else MIN_PLAN_ORDER
         )
     else:
         raise UnknownPlanEncountered()
