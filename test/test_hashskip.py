@@ -47,12 +47,25 @@ class TestLocalConnectForTesting(CorrigibleTest):
                               rocket_mode=True)
 
     def test_second_pass_skip(self):
+        """test that rocket mode really is removing tasks from the playlist"""
+        # get rid of the hashes directory to start fresh
         if bool(os.path.isdir(hashes_dirpath)):
             shutil.rmtree(hashes_dirpath)
+
+        # confirm that running the playbook creates the hashes directory
         self.assertFalse(bool(os.path.isdir(hashes_dirpath)))
         self.run_playbook()
-        self.assertTrue(bool(os.path.isdir(hashes_dirpath)))        
+        self.assertTrue(bool(os.path.isdir(hashes_dirpath)))
+
+        # confirm that playbook is length=5 (2 actual tasks, 3 hash-related tasks)
+        s = self.playbook_as_struct()
+        self.assertTrue(type(s) is list)
+        self.assertTrue(len(s) == 5)
+
+        # run in rocket mode
         self.run_rocket_style()
+
+        # confirm that playbook is length=1 (1 hash-related task)
         s = self.playbook_as_struct()
         self.assertTrue(type(s) is list)
         self.assertTrue(len(s) == 1)
