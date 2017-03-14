@@ -19,7 +19,7 @@ def plan_hash_filepath(plan_name):
 
 
 def plan_hash_filepath_exists(**kwargs):
-    """checks to see if the plan hash filepath exists (i.e. if the plan in its current form has already been included in the playbook)"""
+    """checks to see if the plan hash filepath exists (i.e. if the plan in its current form has already been run at some point in the past)"""
     global _hash_filepaths
 
     # read the hash filepaths from file if _hash_filepaths is None
