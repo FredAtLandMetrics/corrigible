@@ -38,6 +38,7 @@ class TestLocalConnectForTesting(CorrigibleTest):
         self.rerun_corrigible(system_config="test_local_connect_for_testing")
         
     def test_local_connect(self):
+        """test that the local ssh connection is working (needed for some tests to work)"""
         if os.path.isfile('/tmp/test_local_connect.test.txt'):
             os.unlink('/tmp/test_local_connect.test.txt')
         self.assertFalse(bool(os.path.isfile('/tmp/test_local_connect.test.txt')))
