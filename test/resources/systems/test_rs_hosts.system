@@ -29,6 +29,8 @@ hosts:
 plans:
     - plan: apt_upgrade
       run_selectors:
+          include:
+            - ALL
           exclude:
             - update_dnsservers      
     - plan: install_cron
