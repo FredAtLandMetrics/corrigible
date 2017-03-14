@@ -1,6 +1,5 @@
 import os
 import yaml
-import copy
 import jinja2
 import re
 
