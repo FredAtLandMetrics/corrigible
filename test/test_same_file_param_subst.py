@@ -7,18 +7,23 @@ from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
 
 import corrigible.lib.plan
+
+
 script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
 corrigible_exec_filepath = os.path.join(script_dirpath, '..', 'corrigible')
 
+
 os.environ['CORRIGIBLE_SYSTEMS'] = system_config_dirpath
 os.environ['CORRIGIBLE_PLANS'] = plans_config_dirpath
 os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 
+
 PLAYBOOK_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-output.yml"
 HOSTS_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
+
 
 class TestSameFileParamSubst(CorrigibleTest):
 
@@ -33,6 +38,8 @@ class TestSameFileParamSubst(CorrigibleTest):
                               generate_files_only=True)
         
     def test_same_file_param_subst_in_system_file(self):
+        """test that params defined in the parameters section of a system file are available in the plans stanza
+            of the same system file"""
         self.regen()
         s = self.playbook_as_struct()
         
@@ -44,6 +51,8 @@ class TestSameFileParamSubst(CorrigibleTest):
         self.assertTrue('somefile.txt' in str(s[1]['tasks'][0]['copy']))
         
     def test_same_file_param_subst_in_plan_file(self):
+        """test that params defined in the parameters section of a plan file are available in the plans stanza
+            of the same plan file"""
         self.regen()
         s = self.playbook_as_struct()
         
