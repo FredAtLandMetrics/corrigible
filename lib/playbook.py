@@ -427,6 +427,8 @@ def _playbook_from_dict__inline(snippet, order):
     return [(order, yaml.dump(snippet))]
 
 def _playbook_from_dict(plans, parameters):
+    """given a dict containing plans, plan, files, or inline key, return a list containing a tuple
+        of the form (x,y) where x is the order of the playbook snippet and y is the playbook snippet as str"""
 
     # if parameters defined in plans dict, merge with processed_parameters from overriding contexts
     processed_parameters = parameters if 'parameters' not in plans else _merge_args(plans['parameters'], parameters)
