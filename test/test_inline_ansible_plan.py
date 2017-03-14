@@ -33,6 +33,7 @@ class TestInlineAnsiblePlanSystemConfig(CorrigibleTest):
                               generate_files_only=True)
 
     def test_inline_ansible_plan(self):
+        """test that ansible yaml code defined via inline directive actually makes it into the final playbook"""
         self.regen()
         s = self.playbook_as_struct()
         tasksrec = {}
