@@ -4,12 +4,9 @@ import unittest
 import os
 import shutil
 
-from corrigible.lib.plan import plan_index, plan_filepath
 from corrigible.test.lib.corrigible_test import CorrigibleTest
-from corrigible.lib.planhash import plan_hash_str
-from corrigible.lib.plan import plan_filepath
-
 import corrigible.lib.plan
+
 script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
@@ -48,43 +45,7 @@ class TestLocalConnectForTesting(CorrigibleTest):
     def run_rocket_style(self, **kwargs):
         self.rerun_corrigible(system_config="test_hashskip",
                               rocket_mode=True)
-        
-        
-    #def test_hash_dir_create(self):
-        #if bool(os.path.isdir(hashes_dirpath)):
-            #shutil.rmtree(hashes_dirpath)
-        #self.assertFalse(bool(os.path.isdir(hashes_dirpath)))
-        #self.run_playbook()
-        #self.assertTrue(bool(os.path.isdir(hashes_dirpath)))
-        
-    #def test_hash_for_ansible_plans(self):
-        #if bool(os.path.isdir(hashes_dirpath)):
-            #shutil.rmtree(hashes_dirpath)
-        #self.assertFalse(bool(os.path.isdir(hashes_dirpath)))
-        #self.run_playbook()
-        #self.assertTrue(bool(os.path.isdir(hashes_dirpath)))
-        #p_filepath = plan_filepath('hashskip_ansible_plan')
-        #expected_filepath = os.path.join(
-            #hashes_dirpath,
-            #'{}.{}'.format(
-                #os.path.basename(p_filepath),
-                #plan_hash_str(p_filepath)
-            #)
-        #)
-        ##print "expected filepath: {}".format(expected_filepath)
-        #self.assertTrue(os.path.isfile(expected_filepath))
-        
-        #p_filepath = plan_filepath('hashskip_plan_plan')
-        #expected_filepath = os.path.join(
-            #hashes_dirpath,
-            #'{}.{}'.format(
-                #os.path.basename(p_filepath),
-                #plan_hash_str(p_filepath)
-            #)
-        #)
-        ##print "expected filepath: {}".format(expected_filepath)
-        #self.assertTrue(os.path.isfile(expected_filepath))
-        
+
     def test_second_pass_skip(self):
         if bool(os.path.isdir(hashes_dirpath)):
             shutil.rmtree(hashes_dirpath)
