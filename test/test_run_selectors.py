@@ -41,6 +41,9 @@ class TestRunSelectors(CorrigibleTest):
                 self.assertTrue(hostname in hosts)
         
     def test_hosts(self, **kwargs):
+        """test that run selectors work as designed for hosts"""
+
+        # test that hosts map is as expected when run without run selectors
         self.rerun_corrigible(system_config="test_rs_hosts",
                               generate_files_only=True)
         incmap =  [ [ 'a', True ],
@@ -50,8 +53,7 @@ class TestRunSelectors(CorrigibleTest):
                     [ 'e', True ] ]
         self._assert_hostsmap(incmap)
         
-        # determine that the hosts file looks like it should with no run selectors
-        
+        # test that hosts map is as expected when run with run selectors
         self.rerun_corrigible(system_config="test_rs_hosts",
                               generate_files_only=True,
                               run_selectors="testrs5")
@@ -59,17 +61,14 @@ class TestRunSelectors(CorrigibleTest):
                     [ 'b', True ],
                     [ 'c', False ],
                     [ 'd', True ],
-                    [ 'e', True ] ]
+                    [ 'e', False ] ]
         self._assert_hostsmap(incmap)
         
-        #self.rerun_corrigible(system_config="test_rs_hosts",
-                              #generate_files_only=True,
-                              #run_selectors="testrs5")
-        #self.rerun_corrigible(system_config="test_rs_hosts",
-                              #generate_files_only=True,
-                              #run_selectors="testrs1,testrs5")
-                              
+
     def test_plans(self):
+        """ test that run selectors work as designed with plans"""
+
+        # test that
         self.rerun_corrigible(system_config="test_rs_hosts",
                               generate_files_only=True)
         s = self.playbook_as_struct()
@@ -80,11 +79,12 @@ class TestRunSelectors(CorrigibleTest):
         self.assertTrue(type(s[1]['tasks'][0]) is dict)
         self.assertTrue('apt' in s[1]['tasks'][0].keys())
         self.assertFalse('cron' in s[1]['tasks'][0].keys())
+
+        # self.assertFalse(True)
         self.rerun_corrigible(system_config="test_rs_hosts",
                               generate_files_only=True,
                               run_selectors="update_dnsservers")
         s = self.playbook_as_struct()
-        #print "SSSSSSSSSS: {}, {}".format(type(s), str(s))
         self.assertTrue(type(s) is list and len(s) == 3)
         self.assertTrue(type(s[1]) is dict)
         self.assertTrue('tasks' in s[1].keys())
@@ -92,7 +92,6 @@ class TestRunSelectors(CorrigibleTest):
         self.assertTrue(type(s[1]['tasks'][0]) is dict)
         self.assertTrue('cron' in s[1]['tasks'][0].keys())
         self.assertFalse('apt' in s[1]['tasks'][0].keys())
-        pass
     
 if __name__ == '__main__':
     unittest.main()   
