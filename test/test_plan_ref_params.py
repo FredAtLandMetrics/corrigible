@@ -21,6 +21,7 @@ os.environ['CORRIGIBLE_FILES'] = files_config_dirpath
 PLAYBOOK_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-output.yml"
 HOSTS_FILEPATH__SYSTEMCONF_TEST = "/tmp/corrigible-test-hosts-output.hosts"
 
+
 class TestPlanRefParams(CorrigibleTest):
 
     def setUp(self):
@@ -29,17 +30,19 @@ class TestPlanRefParams(CorrigibleTest):
         self.corrigible_exec_filepath = corrigible_exec_filepath
 
     def test_without_plan_ref_params(self):
+        """run with system file that doesn't use per-plan parameters and confirm that user matches what's in system
+            parameter stanza"""
         self.rerun_corrigible(system_config="test_simple_plans",
                               generate_files_only=True)
         s = self.playbook_as_struct()
-        # print json.dumps(s, sort_keys=True, indent=4, separators=(',', ': '))
         self.assertTrue(s[6]['user'] == 'ubuntu')
 
     def test_with_plan_ref_params(self):
+        """run with system file that users per-plan parameters and confirm that user matches what's in per-plan
+            parameter stanza"""
         self.rerun_corrigible(system_config="test_simple_plans__planref_params",
                               generate_files_only=True)
         s = self.playbook_as_struct()
-        # print json.dumps(s, sort_keys=True, indent=4, separators=(',', ': '))
         self.assertTrue(s[6]['user'] == 'hank')
 
 if __name__ == '__main__':
