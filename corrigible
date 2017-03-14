@@ -19,8 +19,7 @@ PROVISION_ROOT_DIRPATH = os.path.join(SOURCES_DIRPATH, 'provision')
 
 if __name__ == '__main__':
 
-    # --- command-line options, crawl params
-    # ---------------------------------------------------------------
+    # --- handle command-line opts
     parser = argparse.ArgumentParser(
         description='provision a server.',
         prog='corrigible'
@@ -32,7 +31,7 @@ if __name__ == '__main__':
                  ( "generate-files-only", "short", "this flag tells corrigible to take no action, but only generate the files" ),
                  ( "selectors", "full", "a list of run selectors to be applied to include/exclude plans" ),
                  ( "skip-cleanup", "short", "for development/testing purposes...leaves temp files in place" ),
-                 ( "rocket-mode", "short", "rocket past any plans that haven't changed and that have already been executed in the past" ) )
+                 ( "rocket-mode", "short", "rocket past any plans that haven't changed and that have already been executed in the past [NEEDS WORK]" ) )
     
     for arginfo in progargs:
         optname, opttype, opthelp = arginfo
@@ -47,27 +46,31 @@ if __name__ == '__main__':
     options = {}
     for opt, val in six.iteritems(args):
         options[opt] = val
-        
-    try:
+
+    # --- set run selectors
+    if "selectors" in options and options["selectors"] is not None and bool(options["selectors"]):
+
         if "," in options['selectors']:
             selectors = [s.trim() for s in options['selectors'].split(',')]
-        elif type(options['selectors']) is str and bool(options['selectors']):
+        else:
             selectors = [options['selectors']]
+
         set_run_selectors_list(selectors)
-    except (KeyError, AttributeError, TypeError):
-        pass
-    
+
+    # write the hostsfile
     write_ansible_hosts(options)
+
+    # if rocket mode is on, write a temp playbook to fetch hashes and run it
     if 'rocket_mode' in options and bool(options['rocket_mode']):
         write_hashes_fetch_playbook(options)
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
-        print("DBG: SETTING ROCKET MODE!")
         rocket_mode(True)
-        
+
+    # write the output playbook
     write_ansible_playbook(options)
     
-    
+    # unless the generate-files-only option was supplied, run the playbook
     if not options["generate_files_only"]:
         run_ansible_playbook(playbook_filepath=ansible_playbook_filepath(options),
                              hosts_filepath=ansible_hostsfile_filepath(options))
