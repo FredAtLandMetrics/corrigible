@@ -33,6 +33,7 @@ class TestSimpleSystemConfig(CorrigibleTest):
                               generate_files_only=True)
         
     def test_plans_in_subdirs(self):
+        """test that plans located in subdirs of the plans/ dir are accessible"""
         self.regen()
         s = self.playbook_as_struct()
         tasksrec = {}
