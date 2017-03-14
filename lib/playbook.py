@@ -7,7 +7,6 @@ import copy
 import os
 import subprocess
 import tempfile
-import traceback
 import six
 
 from .system import system_config
@@ -15,7 +14,6 @@ from .exceptions import \
     PlanFileDoesNotExist, \
     PlanOmittedByRunSelector, \
     UnknownPlanEncountered, \
-    FilesSectionEmpty, \
     FilesDictLacksListKey, \
     NoSudoUserParameterDefined, \
     UnparseablePlanFile, \
@@ -33,43 +31,45 @@ from .sys_default_params import sys_default_parameters
 from .planhash import plan_hash_filepath, plan_hash_filepath_exists
 from .rocketmode import rocket_mode
 
+
+# init jinja environment
 env = jinja2.Environment(autoescape=False)
 
+
+# the top and bottom of the plan order scale
 MAX_PLAN_ORDER = 9999999
+MIN_PLAN_ORDER = 0
 
 
 def ansible_playbook_filepath(opts):
     """returns a filepath to the ansible playbook that is the corrigible output"""
-    try:
-        output_filepath = opts["playbook_output_file"]
-        if output_filepath is not None:
-            return output_filepath
-    except (KeyError):
-        pass
-    return os.path.join(temp_exec_dirpath(), "provision_{}.playbook".format(opts['system']))
+    return os.path.join(temp_exec_dirpath(), "provision_{}.playbook".format(opts['system'])) \
+        if "playbook_output_file" not in opts or opts["playbook_output_file"] is None \
+        else opts["playbook_output_file"]
 
 
-def run_ansible_playbook(**kwargs):
-    """run the specified ansible playbook"""
-    try:
-        environ = _merge_args(os.environ, {'PATH': os.environ["SAFE_CORRIGIBLE_PATH"]})
-    except KeyError:
-        environ = _merge_args(
-            os.environ,
-            {'PATH': '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'}
-        )
-    
-    # so all refs to files can start with 'files/'
+def run_ansible_playbook(hosts_filepath, playbook_filepath):
+    """calls ansible playbook with specified playbook file and hostsfile"""
+
+    # chdir to temp exec dirpath (so all refs to files can start with 'files/')
     os.chdir(temp_exec_dirpath())
     
     subprocess.call(
-        ["ansible-playbook", "-vvvv", '-i', kwargs['hosts_filepath'], kwargs['playbook_filepath']],
-        env=environ
+        ["ansible-playbook", "-vvvv", '-i', hosts_filepath, playbook_filepath],
+        env=_merge_args(
+            os.environ,
+            {
+                'PATH': os.environ["SAFE_CORRIGIBLE_PATH"] \
+                    if "SAFE_CORRIGIBLE_PATH" in os.environ \
+                    else '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
+            }
+        )
     )
 
 
 def write_hashes_fetch_playbook(opts):
     """fetch rocketmode hashes from remote machine"""
+
     mconf = system_config(opts)
 
     # get plans and params
@@ -121,7 +121,7 @@ def write_ansible_playbook(opts):
 
     # ensure list output is not None
     if list_output is None:
-        __write_to_playbook("# WARN: No playbook output!\n", opts)
+        _write_to_playbook("# WARN: No playbook output!\n", opts)
         return
 
     # final filtering on playbook output
@@ -135,10 +135,10 @@ def write_ansible_playbook(opts):
         playbook_output = "{}\n{}".format(_playbook_hashes_prefix(params), filtered_output)
 
     # write playbook output
-    __write_to_playbook(playbook_output, opts)
+    _write_to_playbook(playbook_output, opts)
 
 
-def __write_to_playbook(content, opts):
+def _write_to_playbook(content, opts):
     """write content to ansible playbook filepath"""
     with open(ansible_playbook_filepath(opts), "w") as fh:
         fh.write(content)
@@ -189,8 +189,7 @@ def _playbook_from_list(**kwargs):
         playbook_dict_tuple = None
         try:
             # get output from _playbook_from_dict and add to playbook_text_tuple_list
-            playbook_dict_tuple = _playbook_from_dict(plans=plans_dict,
-                                                      parameters=playbook_params)
+            playbook_dict_tuple = _playbook_from_dict(plans=plans_dict, parameters=playbook_params)
         except (PlanOmittedByRunSelector, DuplicatePlanInRocketMode):
             pass
 
@@ -230,7 +229,6 @@ def _text_from_tuple_list(*args):
 
 
 def _playbook_from_dict__plan(plan_name, params):
-
     """given a plan name and any params from an overriding context, return a list containing a tuple
     of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
 
@@ -367,12 +365,10 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
 
                     if ansible_arg_key_str == 'src':
                         if ('template' in kwargs and _str_bool(kwargs['template'])) or \
-                            ('template' in f and _str_bool(f['template'])):
-                            # HERE!!!
+                                ('template' in f and _str_bool(f['template'])):
+
                             with open(os.path.join(temp_exec_dirpath(), ansible_arg_val_str), "r") as sfh:
                                 raw_template_contents_str = str(sfh.read().encode('utf-8','ignore'))
-
-                                # print("raw template contents str: {}".format(raw_template_contents_str))
 
                                 fh, filepath = tempfile.mkstemp()
                                 with open(filepath, 'w') as dfh:
@@ -429,38 +425,33 @@ def _playbook_from_dict__inline(snippet, order):
     of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
     return [(order, yaml.dump(snippet))]
 
-def _playbook_from_dict(**kwargs):
+def _playbook_from_dict(plans, parameters):
 
-    if 'plans' not in kwargs:
-        raise RequiredParameterPlansNotProvided()
-    plans_dict = kwargs['plans']
+    # if parameters defined in plans dict, merge with processed_parameters from overriding contexts
+    processed_parameters = parameters if 'parameters' not in plans else _merge_args(plans['parameters'], parameters)
 
-    # if parameters defined in plans dict, merge with params from overriding contexts
-    overriding_params = kwargs['parameters'] if 'parameters' in kwargs else {}
-    params = overriding_params if 'parameters' not in plans_dict else _merge_args(plans_dict['parameters'], overriding_params)
-
-    if 'plans' in plans_dict:
-        return [(MAX_PLAN_ORDER, _playbook_from_list(plans=plans_dict['plans'], parameters=params))]
+    if 'plans' in plans:
+        return [(MAX_PLAN_ORDER, _playbook_from_list(plans=plans['plans'], parameters=processed_parameters))]
 
     # handle plan type: plan file
-    if 'plan' in plans_dict:
-        if 'run_selectors' in plans_dict and not run_selector_affirmative(plans_dict['run_selectors']):
+    if 'plan' in plans:
+        if 'run_selectors' in plans and not run_selector_affirmative(plans['run_selectors']):
             raise PlanOmittedByRunSelector()
         try:
-            return _playbook_from_dict__plan(plans_dict['plan'], params)
+            return _playbook_from_dict__plan(plans['plan'], processed_parameters)
         except UnparseablePlanFile as e:
             print("ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str()))
             raise
 
-    elif 'files' in plans_dict:
-        return _playbook_from_dict__files(plans_dict['files'], params)
+    elif 'files' in plans:
+        return _playbook_from_dict__files(plans['files'], processed_parameters)
 
-    elif 'inline' in plans_dict:
-        if 'ansible' not in plans_dict['inline']:
+    elif 'inline' in plans:
+        if 'ansible' not in plans['inline']:
             raise MalformedInlineAnsibleSnippet()
         return _playbook_from_dict__inline(
-            plans_dict['inline']['ansible'],
-            plans_dict['inline']['order'] if 'order' in plans_dict['inline'] else 0
+            plans['inline']['ansible'],
+            plans['inline']['order'] if 'order' in plans['inline'] else 0
         )
     else:
         raise UnknownPlanEncountered()
