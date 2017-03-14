@@ -232,9 +232,10 @@ def _playbook_from_dict__plan(plan_name, params):
     """given a plan name and any params from an overriding context, return a list containing a tuple
     of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
 
-    # raise an exception if the plan has already been included in the playbook
+    # raise an exception if rocket mode is on and plan, in its current form, has already been run at some point in
+    # the past
     if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
-        raise DuplicatePlanInRocketMode()
+        raise DuplicatePlanInRocketMode
 
     # index and filepath
     plan_ndx = plan_index(plan_name)
