@@ -8,5 +8,5 @@ plans:
               user: {{ deployuser }}
               sudo: False
               tasks:
-                - name: touch a file
+                - name: touch temp file z
                   shell: /usr/bin/touch /tmp/touch_z.txt

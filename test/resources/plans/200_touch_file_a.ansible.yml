@@ -1,5 +1,5 @@
 - hosts: all
   user: {{ deployuser }}
   tasks:
-    - name: touch a temp file
-      shell: touch /tmp/touch_a.txt
+    - name: touch temp file a
+      shell: /usr/bin/touch /tmp/touch_a.txt
