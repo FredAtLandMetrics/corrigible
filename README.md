@@ -16,8 +16,16 @@ Our particular problem was a large number of existing and planned codebases with
 automated deployment requirements.  There was a fair bit of existing ansible playbook code already in use, but it was
 fragile and fixes rarely made it to every codebase to which it should have been applied.
 
-After much discussion with a coworker about our particular set of requirements, I scratched out a design for corrigible
+After much discussion with a coworker about our particular set of requirements, I scratched out a design
 that addressed our needs without sacrificing ansible's simplicity (which we both agreed was priority #1).
+
+The result is **corrigible**, which let us develop a library of re-usable snippets and structured collections
+thereof that gave us the ability:
+* to apply fixes across all targets at once
+* to keep the existing playbook code
+* to develop best-practices and guidelines that helped us add directives without disrupting surrounding
+playbook code
+* to create automated deployment code for new projects much more quickly
 
 Before You Begin
 ================
@@ -329,15 +337,32 @@ corrigible somehost
 
 Project Status
 ==============
-The hard parts work and there's tests around key points.  I'm currently trying to use corrigible in real-world
-provisioning situations to see what I like and don't like so I can make changes, come up with new features, make things
-faster, etc.
+The hard parts work and there's tests around key points.  It's been working for a number of projects for nearly two
+years.  I've just (in early 2017) made it python3-friendly and now (in March 2017) I've done a fair bit of cleanup to
+get the code in better shape for a couple of interviews, so the next steps are:
+* to get rocket-mode working in a more useful way (a changed plan should cause the re-execution of every parent plan up
+to the system file...currently, this isn't what happens, so rocket-mode is really only worth using for very shallow
+plan-trees and, unless you really know what you're doing, there's a good chance it's not doing what you think)
+* to allow for optional parallelism in execution based on the ordering (multiple, separate snippets with the same
+sort-order number should be able to run in parallel)
+
+Now that it's been in use for a variety of projects, I've gotten a feel for what features have actually been used and
+what really hasn't ended up being particularly useful.  As of right now, v2 will likely include:
+* no distinction between ansible snippets and plan files, snippet syntax will become a superset of ansible syntax
+* provisioning for AWS, GCE, and Digital Ocean will be a part of the language
+* added to the yaml syntax will be a way to include other yaml files
+* rocket mode will be on by default, but will be opt-in for snippets (so everything runs every time, unless otherwise
+directed)
+* there will be constants (see TODO)
+* ability to reference parameter files so multiple system files can reference the same parameter file
+* script hooks (use case: to check to see if the current checkpoint matches the latest in master)
 
 Also, I've put up a [repository for examples](https://github.com/FredAtLandMetrics/corrigible-example1).
 
 Contact
 =======
-Feedback is welcomed.  Feel free to email me at [fred@frameworklabs.us](fred@frameworklabs.us).  I do have a bit of a
+Feedback is welcomed.  Feel free to email me at [fred@frameworklabs.us](mailto:fred@frameworklabs.us).  I do have a bit of a
 spam problem, so please mention corrigible in the subject line.
 
-Also, head to [Framework Labs](http://frameworklabs.us) if you'd like to discuss working with me on a project!
+Also, head to [Framework Labs](http://frameworklabs.us) for more information about the sort of work I do.  Please get
+in touch if you have a project you would like help with!
