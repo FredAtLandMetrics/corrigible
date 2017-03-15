@@ -5,6 +5,9 @@ hosts:
 
 parameters:
     deployuser: {{ sys_local_user }}
+    sudouser: {{ sys_local_user }}
+    rootuser: {{ sys_local_user }}
+    sudo: yes
 
 plans:
     - plan: rocketmode_test
