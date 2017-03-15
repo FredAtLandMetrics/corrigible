@@ -3,16 +3,17 @@
 import unittest
 import os
 import shutil
+import subprocess
 
-from corrigible.test.lib.corrigible_test import CorrigibleTest
-import corrigible.lib.plan
+from test.lib.corrigible_test import CorrigibleTest
+import lib.plan
 
-script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
+script_dirpath = os.path.join(os.path.dirname(lib.plan.__file__), '..', 'test')
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
 corrigible_exec_filepath = os.path.join(script_dirpath, '..', 'corrigible')
-hashes_dirpath = '/tmp/corrigible_hashes'
+hashes_dirpath = '/corrigible/hashes'
 
 os.environ['CORRIGIBLE_SYSTEMS'] = system_config_dirpath
 os.environ['CORRIGIBLE_PLANS'] = plans_config_dirpath
@@ -50,7 +51,8 @@ class TestLocalConnectForTesting(CorrigibleTest):
         """test that rocket mode really is removing tasks from the playlist"""
         # get rid of the hashes directory to start fresh
         if bool(os.path.isdir(hashes_dirpath)):
-            shutil.rmtree(hashes_dirpath)
+            subprocess.call(["sudo", "rm", "-rf", hashes_dirpath])
+            # shutil.rmtree(hashes_dirpath)
 
         # confirm that running the playbook creates the hashes directory
         self.assertFalse(bool(os.path.isdir(hashes_dirpath)))
