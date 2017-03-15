@@ -4,10 +4,10 @@ import unittest
 import os
 import re
 
-from corrigible.test.lib.corrigible_test import CorrigibleTest
+from test.lib.corrigible_test import CorrigibleTest
 
-import corrigible.lib.plan
-script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
+import lib.plan
+script_dirpath = os.path.join(os.path.dirname(lib.plan.__file__), '..', 'test')
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')

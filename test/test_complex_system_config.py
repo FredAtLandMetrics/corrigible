@@ -3,11 +3,11 @@
 import unittest
 import os
 import re
-import corrigible.lib.plan
-from corrigible.lib.plan import plan_index, plan_filepath
-from corrigible.test.lib.corrigible_test import CorrigibleTest
+import lib.plan
+from lib.plan import plan_index, plan_filepath
+from test.lib.corrigible_test import CorrigibleTest
 
-script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
+script_dirpath = os.path.join(os.path.dirname(lib.plan.__file__), '..', 'test')
 
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
@@ -32,8 +32,6 @@ class TestComplexSystemConfig(CorrigibleTest):
         """re-run corrigible for the complex plan test config"""
         self.rerun_corrigible(system_config="test_complex_plans",
                               generate_files_only=True)
-        
-        
         
     def test_complex_plan_ordering(self):
         """after re-running corrigible on the complex plans test system config, test that the plans are ordered as per the index indicated is each's filename and as per the plan file containment"""

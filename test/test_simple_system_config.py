@@ -4,13 +4,13 @@ import unittest
 import os
 import json
 
-from corrigible.lib.plan import plan_index, plan_filepath
-from corrigible.test.lib.corrigible_test import CorrigibleTest
+from lib.plan import plan_index, plan_filepath
+from test.lib.corrigible_test import CorrigibleTest
 
-import corrigible.lib.plan
+import lib.plan
 
 
-script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
+script_dirpath = os.path.join(os.path.dirname(lib.plan.__file__), '..', 'test')
 system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
@@ -83,7 +83,7 @@ class TestSimpleSystemConfig(CorrigibleTest):
         self.assertTrue(os.path.isfile(self.output_playbook_filepath))
         self.assertTrue(os.path.isfile(self.output_hostsfile_filepath))
         s = self.playbook_as_struct()
-        self.assertTrue(s[1]['user'] == 'ubuntu')
+        self.assertTrue(s[1]['user'] == os.environ['USER'])
         self.assertTrue(s[1]['sudo'] == True)
 
     def test_plan_ordering_by_index(self):
