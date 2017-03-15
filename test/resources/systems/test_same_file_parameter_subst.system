@@ -3,7 +3,8 @@ hosts:
       ip_address: 2.3.4.5
       
 parameters:
-    sudouser: ubuntu
+    sudouser: {{ sys_local_user }}
+    rootuser: {{ sys_local_user }}
     sudo: True
     srcfn: somefile.txt
     

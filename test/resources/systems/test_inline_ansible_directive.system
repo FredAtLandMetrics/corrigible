@@ -4,6 +4,7 @@ hosts:
       
 parameters:
     sudouser: ubuntu
+    rootuser: ubuntu
     sudo: True
     
 plans:

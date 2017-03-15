@@ -5,6 +5,7 @@ hosts:
 
 parameters:
   sudouser: {{ sys_local_user }}
+  rootuser: {{ sys_local_user }}
   sudo: yes
   
 plans:

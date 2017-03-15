@@ -1,3 +1,7 @@
+parameters:
+    sudouser: {{ sys_local_user }}
+    rootuser: {{ sys_local_user }}
+
 hosts:
     - hostname: 'testhost'
       hostgroup: 'testgroup'

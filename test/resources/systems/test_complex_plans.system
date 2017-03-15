@@ -12,6 +12,7 @@ hosts:
       ip_address: 2.3.4.5
 
 parameters:
+    rootuser: root
     sudouser: ubuntu
     deployuser: deploy
     sudo: yes

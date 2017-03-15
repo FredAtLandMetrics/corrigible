@@ -4,7 +4,8 @@ hosts:
       ip_address: 1.2.3.4
 
 parameters:
-    sudouser: ubuntu
+    sudouser: {{ sys_local_user }}
+    rootuser: {{ sys_local_user }}
     deployuser: deploy
     sudo: yes
     
