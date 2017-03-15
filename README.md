@@ -4,14 +4,20 @@ Introduction
 **corrigible** builds on the capabilities of the fantastic automated configuration tool, [ansible](http://www.ansible.com/home), by adding:
 * ansible yaml re-use
 * sysV-style ordering of ansible snippets
-* simplified variable substitution
+* playbook variables that are overrideable via environment variables
+* enhanced variable substitution
 * run selectors for full vs. partial playbook execution
 
 Why?
 ====
 I really like ansible, but it's awkward at scale.  I feel like it's made to be simple and, as soon as I try to do something a bit more complicated (but not THAT much), I end up copying bits of ansible playbooks around (or forgetting to, which is arguably worse).
 
-After a great discussion with a coworker about our particular set of requirements, I scratched out a design for corrigible to meet our needs without sacrificing ansible's simplicity (which we both agreed was priority #1).
+Our particular problem was a large number of existing and planned codebases with similar, but not identical,
+automated deployment requirements.  There was a fair bit of existing ansible playbook code already in use, but it was
+fragile and fixes rarely made it to every codebase to which it should have been applied.
+
+After much discussion with a coworker about our particular set of requirements, I scratched out a design for corrigible
+that addressed our needs without sacrificing ansible's simplicity (which we both agreed was priority #1).
 
 Before You Begin
 ================
