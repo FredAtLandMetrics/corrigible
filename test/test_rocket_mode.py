@@ -39,7 +39,6 @@ class TestSystemParams(CorrigibleTest):
         env = copy.copy(os.environ)
         env["CORRIGIBLE_PATH"] = self.new_corrigible_environment_dirpath()
         self.rerun_corrigible(system_config="test_rocket_mode",
-                              generate_files_only=True,
                               rocket_mode=kwargs["rocket_mode"] if "rocket_mode" in kwargs else False,
                               env=env)
 
@@ -88,7 +87,7 @@ class TestSystemParams(CorrigibleTest):
         )
 
         # plans
-        for plan in ["150_rocketmode_test.plan.yml", "200_touch_file_a.ansible.yml", "200_touch_file_b.ansible.yml"]:
+        for plan in ["150_rocketmode_test.plan.yml", "200_touch_file_a.ansible.yml", "210_touch_file_b.ansible.yml"]:
             shutil.copyfile(
                 os.path.join(plans_config_dirpath, plan),
                 os.path.join(provision_dir["plans"], plan)
@@ -104,13 +103,24 @@ class TestSystemParams(CorrigibleTest):
         self.clear_touched_files()
 
         # run corrigible
-        self.regen()
+        self.regen(rocket_mode=True)
 
         # test that everything is in the playbook as expected
+        s = self.playbook_as_struct()
+        print("s: {}".format(s))
 
-        # run corrigible
+        self.assertTrue(s[1]["tasks"][0]["name"] == "touch temp file z")
+        self.assertTrue(s[2]["tasks"][0]["name"] == "touch temp file a")
+        self.assertTrue(s[4]["tasks"][0]["name"] == "touch temp file b")
+
+        # run corrigible with rocket mode on
+        self.regen(rocket_mode=True)
 
         # test that very little is in the playbook as expected
+        s = self.playbook_as_struct()
+        self.assertTrue(len(s) == 1)
+
+        # self.assertTrue(False)
 
         # change low-level plan
 
@@ -120,13 +130,6 @@ class TestSystemParams(CorrigibleTest):
 
         # delete the temp corrigible environment
 
-        self.regen()
-        s = self.playbook_as_struct()
-        # self.assertTrue(type(s) is list)
-        # self.assertTrue(len(s) > 0)
-        # self.assertTrue(type(s[1]) is dict)
-        # self.assertTrue('user' in s[1])
-        # self.assertTrue(s[1]['user'] == os.environ['USER'])
 
 
 if __name__ == '__main__':
