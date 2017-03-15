@@ -17,24 +17,17 @@ class CorrigibleTest(unittest.TestCase):
             os.remove(self.output_hostsfile_filepath)
             
         call_list =  [self.corrigible_exec_filepath, kwargs['system_config']]
-        try:
-            assert(bool(kwargs['generate_files_only']))
-            call_list.append("--generate-files-only")
-        except (AssertionError, KeyError):
-            pass
-        
-        try:
-            assert(bool(kwargs['skip_cleanup']))
-            call_list.append("--skip-cleanup")
-        except (AssertionError, KeyError):
-            pass
-        
-        try:
-            assert(bool(kwargs['rocket_mode']))
-            call_list.append("--rocket-mode")
-        except (AssertionError, KeyError):
-            pass
-        
+
+        if 'generate_files_only' in kwargs:
+            if bool(kwargs['generate_files_only']):
+                call_list.append("--generate-files-only")
+        if 'skip_cleanup' in kwargs:
+            if bool(kwargs['skip_cleanup']):
+                call_list.append("--skip-cleanup")
+        if 'rocket_mode' in kwargs:
+            if bool(kwargs['rocket_mode']):
+                call_list.append("--rocket-mode")
+
         call_list.append("--playbook-output-file={}".format(self.output_playbook_filepath))
         call_list.append("--hosts-output-file={}".format(self.output_hostsfile_filepath))
         
@@ -43,7 +36,7 @@ class CorrigibleTest(unittest.TestCase):
         except KeyError:
             pass
         
-        call(call_list, env=os.environ.copy())
+        call(call_list, env=os.environ.copy() if "env" not in kwargs else kwargs["env"])
         
         
     def hosts_groups_from_file(self, hosts_filepath):
