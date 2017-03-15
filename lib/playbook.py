@@ -485,11 +485,13 @@ def _playbook_hashes_prefix(params, **kwargs):
     else:
         return """
 - hosts: all
+  user: {}
+  sudo: yes
   tasks:
     - name: ensure hashes dir exists
       file: state=directory path={}
       {}
-        """.format(hashes_dirpath(), fetch_hashes_str)
+        """.format(params['rootuser'], hashes_dirpath(), fetch_hashes_str)
 
 
 def _hash_stanza_suffix(plan_name, params):
