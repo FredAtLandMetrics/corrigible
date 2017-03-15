@@ -37,13 +37,13 @@ class TestSystemParams(CorrigibleTest):
     def regen(self, **kwargs):
         """re-run corrigible for the simple plan test config"""
         env = copy.copy(os.environ)
-        env["CORRIGIBLE_PATH"] = tmp_exec_dirpath()
+        env["CORRIGIBLE_PATH"] = self.new_corrigible_environment_dirpath()
         self.rerun_corrigible(system_config="test_rocket_mode",
                               generate_files_only=True,
                               rocket_mode=kwargs["rocket_mode"] if "rocket_mode" in kwargs else False,
                               env=env)
 
-    def temp_exec_dirpath(self):
+    def new_corrigible_environment_dirpath(self):
         """returns the dirpath to the temp execution directory for this process"""
         global tmp_exec_dirpath
 
@@ -76,21 +76,29 @@ class TestSystemParams(CorrigibleTest):
 
         # dirs
         provision_dir = {}
-        dirpath = self.temp_exec_dirpath()
+        dirpath = self.new_corrigible_environment_dirpath()
         for dirname in ["plans", "systems", "files"]:
             provision_dir[dirname] = os.path.join(dirpath, dirname)
             os.mkdir(provision_dir[dirname])
 
         # systems
-        shutil.copyfile(os.path.join(system_config_dirpath, "test_rocket_mode.system"))
+        shutil.copyfile(
+            os.path.join(system_config_dirpath, "test_rocket_mode.system"),
+            os.path.join(provision_dir["systems"], "test_rocket_mode.system")
+        )
 
         # plans
-        shutil.copyfile(os.path.join(plans_config_dirpath, "150_rocketmode_test.plan.yml"))
-        shutil.copyfile(os.path.join(plans_config_dirpath, "200_touch_file_a.ansible.yml"))
-        shutil.copyfile(os.path.join(plans_config_dirpath, "200_touch_file_b.ansible.yml"))
+        for plan in ["150_rocketmode_test.plan.yml", "200_touch_file_a.ansible.yml", "200_touch_file_b.ansible.yml"]:
+            shutil.copyfile(
+                os.path.join(plans_config_dirpath, plan),
+                os.path.join(provision_dir["plans"], plan)
+            )
 
         # --- clear hashes dir
-        shutil.rmtree(hashes_dirpath)
+        try:
+            shutil.rmtree(hashes_dirpath)
+        except FileNotFoundError:
+            pass
 
         # -- clear touched files that may be left around from previous failed runs of this test
         self.clear_touched_files()
