@@ -1,0 +1,10 @@
+hosts:
+    - hostname: 'thishost'
+      hostgroup: 'thisgroup'
+      ip_address: 127.0.0.1
+
+parameters:
+    deployuser: {{ sys_local_user }}
+
+plans:
+    - plan: rocketmode_test

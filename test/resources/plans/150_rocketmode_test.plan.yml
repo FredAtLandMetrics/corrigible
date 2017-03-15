@@ -1,0 +1,12 @@
+plans:
+    - plan: touch_file_a
+    - plan: touch_file_b
+    - inline:
+          order: 12
+          ansible:
+            - hosts: all
+              user: {{ deployuser }}
+              sudo: False
+              tasks:
+                - name: touch a file
+                  shell: /usr/bin/touch /tmp/touch_z.txt
