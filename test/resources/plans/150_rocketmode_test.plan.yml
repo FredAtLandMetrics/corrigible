@@ -5,8 +5,7 @@ plans:
           order: 12
           ansible:
             - hosts: all
-              user: {{ deployuser }}
-              sudo: False
+              user: {{ sudouser }}
               tasks:
                 - name: touch temp file z
                   shell: /usr/bin/touch /tmp/touch_z.txt

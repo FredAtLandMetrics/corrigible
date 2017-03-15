@@ -1,5 +1,5 @@
 - hosts: all
-  user: {{ deployuser }}
+  user: {{ sudouser }}
   tasks:
     - name: touch temp file a
       shell: /usr/bin/touch /tmp/touch_a.txt
