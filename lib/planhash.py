@@ -24,11 +24,13 @@ def plan_hash_filepath_exists(**kwargs):
 
     # read the hash filepaths from file if _hash_filepaths is None
     if _hash_filepaths is None:
-        with open('/tmp/corrigible_hashes_list', 'rb') as fh:
-            _hash_filepaths = fh.read().split('\n')
+        with open('/tmp/corrigible_hashes_list', 'r') as fh:
+            _hash_filepaths = [ os.path.basename(s) for s in str(fh.read()).split('\n') ]
 
     # return true if the plan hash filepath exists in _hsh_filepaths
-    return bool(os.path.basename(plan_hash_filepath(kwargs['plan'])) in _hash_filepaths)
+    ret = bool(os.path.basename(plan_hash_filepath(kwargs['plan'])) in _hash_filepaths)
+
+    return ret
 
 
 def _plan_hash_str(fn):
