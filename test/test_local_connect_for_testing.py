@@ -12,7 +12,7 @@ system_config_dirpath = os.path.join(script_dirpath,'resources','systems')
 plans_config_dirpath = os.path.join(script_dirpath,'resources','plans')
 files_config_dirpath = os.path.join(script_dirpath,'resources','files')
 corrigible_exec_filepath = os.path.join(script_dirpath, '..', 'corrigible')
-hashes_dirpath = '/tmp/corrigible_hashes'
+hashes_dirpath = '/corrigible/hashes'
 
 os.environ['CORRIGIBLE_SYSTEMS'] = system_config_dirpath
 os.environ['CORRIGIBLE_PLANS'] = plans_config_dirpath
