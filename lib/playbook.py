@@ -127,32 +127,32 @@ def write_ansible_playbook(opts):
     _write_to_playbook(playbook_output, opts)
 
 
-
-def _snippet_structure_to_string(s):
-
+def _snippet_structure_to_string(snippet_struct):
+    """given a snippet structure, return the structure as a workbook snippet"""
     def omit_reason_list(omit_reasons_list):
         return [omission["reason"] for omission in omit_reasons_list]
 
     # produce simple list of reasons
     omit_reasons = []
-    if bool(s["omit_reasons_list"]):
-        omit_reasons = omit_reason_list(s["omit_reasons_list"])
+    if bool(snippet_struct["omit_reasons_list"]):
+        omit_reasons = omit_reason_list(snippet_struct["omit_reasons_list"])
 
-    # if we're omitted by run_selector, there's no need to go on
+    # if omitted by run_selector, there's no need to go on
     if "run_selector" in omit_reasons:
         return ""
 
+    # init to zero the count of the number of sub plans that produced output
     num_producing_sub_plans = 0
 
-    # if s just has text, ret = text
+    # if snippet just has text, ret = text
     ret = ""
-    if "plan_output_text" in s:
-        ret = s["plan_output_text"]
+    if "plan_output_text" in snippet_struct:
+        ret = snippet_struct["plan_output_text"]
 
-    # otherwise if s has a list of other snippet structs
-    elif "plan_output_list" in s:
+    # otherwise if snippet has a list of other snippet structs
+    elif "plan_output_list" in snippet_struct:
         output_tuple_list = []
-        for snip_struct in s["plan_output_list"]:
+        for snip_struct in snippet_struct["plan_output_list"]:
             snippet_str = _snippet_structure_to_string(snip_struct)
             if type(snippet_str) is str and len(snippet_str) > 0:
                 output_tuple_list.append((snip_struct["order"], snippet_str))
@@ -172,8 +172,8 @@ def _snippet_structure_to_string(s):
 
         # there should be a plan name for every plan other than the system plan, and there should also be a hash suffix
         # for every non-omitted plan
-        if s["plan_name"] is not None:
-            return "{}\n{}\n".format(ret, _hash_stanza_suffix(s["plan_name"], s["params"]))
+        if snippet_struct["plan_name"] is not None:
+            return "{}\n{}\n".format(ret, _hash_stanza_suffix(snippet_struct["plan_name"], snippet_struct["params"]))
         else:
             return ret
 
@@ -182,7 +182,7 @@ def _snippet_structure_to_string(s):
 
 
 def _get_playbook_snippet_structure(opts, plan_tree_struct, snippet_depth=0, plan_name=None, parameters=None, order=MIN_PLAN_ORDER):
-
+    """given a plan tree structure, produce a snippet structure for consumption by _snippet_structure_to_string"""
     omit_reasons_list = []
 
     if snippet_depth < 1:
@@ -365,12 +365,10 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     
     files = {}
     for f in files_list:
-        # print("f: {}".format(f))
         arg_strs = []
         for arg_tuple in arg_data:
             
             ansible_arg_key_str, corrigible_arg_keys = arg_tuple
-            #print("key: {}".format(str(corrigible_arg_keys)))
             if (type(corrigible_arg_keys) is not list):
                 corrigible_arg_keys = [corrigible_arg_keys]
                 
@@ -567,10 +565,12 @@ def _hash_stanza_suffix(plan_name, params):
 
 
 def _system_level_parameters(opts):
+    """returns the computed parameters of the top-level system plan"""
     mconf = system_config(opts)
     params = mconf['parameters'] if 'parameters' in mconf else {}
     params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
     return params
+
 
 def __redact_params(snippet_struct):
     """used to reduce the output when debugging, this will convert all params with a redacted str"""
