@@ -1,5 +1,21 @@
 # -*- coding: utf-8 -*-
 
+# The previous implementation of write_ansible_playbook was based on functions that walked the plan tree, producing
+# playbook snippets and grafting snippets of any included plans.
+#
+# This worked well until I tried to implement *rocket mode*, which would remove any plans that had been
+# executed on a previous run.  There was a lack of structural knowledge in the code that converted plans to string, so
+# rocket mode worked fine for any simple plans included in the top-level system file, but it had no ability to deal
+# with changes in sub-plans.  The changes would simply be ignored, effectively deleted by the lack of change in the
+# parent (including) plan.
+#
+# This implementation takes a two-pass strategy.  The plan tree is first converted to a snippet-tree, which preserves
+# the structure of the plan tree as it produces output.  In this implementation, the structure of the plan tree in its
+# entirety is represented in the snippet-tree, but as the snippet tree is built, omissions due to run-selectors and
+# rocket-mode hash collisions are simply recorded alongside the output for later use by the code which converts the
+# snippet tree to the final playbook output.
+
+
 import jinja2
 import yaml
 import heapq
@@ -195,7 +211,6 @@ def _get_playbook_snippet_structure(opts, plan_tree_struct, snippet_depth=0, pla
             if "parameters" in plan_tree_struct:
                 print("parameters: {}\n{}".format(parameters, plan_tree_struct["parameters"]))
                 parameters = _merge_args(parameters, plan_tree_struct["parameters"])
-                # parameters = dict(list(parameters) + list(plan_tree_struct["parameters"]))
         num_changed_plans = 0
         for plan_dict in plan_tree_struct["plans"]:
             plan_dict_snippet_output = _get_playbook_snippet_structure(opts, plan_dict, snippet_depth=snippet_depth + 1, parameters=parameters)
@@ -251,7 +266,6 @@ def _get_playbook_snippet_structure(opts, plan_tree_struct, snippet_depth=0, pla
 
         if "parameters" in plan_tree_struct:
             parameters = _merge_args(parameters, plan_tree_struct["parameters"])
-            # parameters = dict(list(parameters) + list(plan_tree_struct["parameters"]))
 
         # PASS #1 - process the yaml contents to extract params
         try:
@@ -318,7 +332,6 @@ def _get_playbook_snippet_structure(opts, plan_tree_struct, snippet_depth=0, pla
         files_order=MIN_PLAN_ORDER
         if "parameters" in plan_tree_struct["files"]:
             parameters = _merge_args(parameters, plan_tree_struct["files"]["parameters"])
-            # parameters = dict(list(parameters) + list(plan_tree_struct["files"]["parameters"]))
             if "order" in plan_tree_struct["files"]["parameters"]:
                 files_order = plan_tree_struct["files"]["parameters"]["order"]
         files_output_list = _playbook_from_dict__files(plan_tree_struct["files"], parameters)
