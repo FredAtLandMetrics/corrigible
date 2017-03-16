@@ -4,6 +4,7 @@ import unittest
 import os
 import shutil
 import subprocess
+import time
 
 from test.lib.corrigible_test import CorrigibleTest
 import lib.plan
@@ -59,6 +60,7 @@ class TestLocalConnectForTesting(CorrigibleTest):
         self.run_playbook()
         self.assertTrue(bool(os.path.isdir(hashes_dirpath)))
 
+
         # confirm that playbook is length=5 (2 actual tasks, 3 hash-related tasks)
         s = self.playbook_as_struct()
         self.assertTrue(type(s) is list)
@@ -67,11 +69,10 @@ class TestLocalConnectForTesting(CorrigibleTest):
         # run in rocket mode
         self.run_rocket_style()
 
-        # confirm that playbook is length=1 (1 hash-related task)
+        # confirm that playbook is empty
         s = self.playbook_as_struct()
-        self.assertTrue(type(s) is list)
-        self.assertTrue(len(s) == 1)
-        
+        self.assertTrue(s is None)
+
 if __name__ == '__main__':
     unittest.main()   
     
