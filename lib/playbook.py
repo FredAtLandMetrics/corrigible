@@ -8,6 +8,7 @@ import os
 import subprocess
 import tempfile
 import six
+import pprint
 
 from .system import system_config
 from .exceptions import \
@@ -39,6 +40,8 @@ env = jinja2.Environment(autoescape=False)
 # the top and bottom of the plan order scale
 MAX_PLAN_ORDER = 9999999
 MIN_PLAN_ORDER = 0
+
+PLAYBOOK_BUILD_VERSION = 2
 
 
 def ansible_playbook_filepath(opts):
@@ -100,12 +103,300 @@ def write_hashes_fetch_playbook(opts):
 def write_ansible_playbook(opts):
     """main corrigible output function, writes ansible playbook"""
 
+    playbook_output = None
+    if PLAYBOOK_BUILD_VERSION == 1:
+        playbook_output = get_playbook_output__v1(opts)
+    if PLAYBOOK_BUILD_VERSION == 2:
+        playbook_output = get_playbook_output__v2(opts)
+
+    # ensure list output is not None
+    if playbook_output is None:
+        _write_to_playbook("# WARN: No playbook output!\n", opts)
+        return
+
+    print("playbook_output: {}".format(playbook_output))
+
+    # final filtering on playbook output
+    filtered_output = _filter_final_playbook_output(playbook_output)
+
+    # if filtered output is non-empty string, just use the hash prefix, otherwise use hash prefix + filtered output
+    if type(filtered_output) is not str or not bool(filtered_output):
+        playbook_output = _playbook_hashes_prefix(_system_level_parameters(opts))
+    else:
+        playbook_output = "{}\n{}".format(_playbook_hashes_prefix(_system_level_parameters(opts)), filtered_output)
+
+    # write playbook output
+    _write_to_playbook(playbook_output, opts)
+
+def get_playbook_output__v2(opts):
+
+    mconf = system_config(opts)
+
+    snippet_structure = get_playbook_snippet_structure(opts, mconf)
+
+    parameterless_snippet_structure = _redact_params(snippet_structure)
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(parameterless_snippet_structure)
+
+
+    ret = _snippet_structure_to_string(snippet_structure)
+
+    if type(ret) is str and len(ret) < 1:
+        return None
+
+    return ret
+
+def _redact_params(snippet_struct):
+    parameterless_snippet_structure = copy.copy(snippet_struct)
+    parameterless_snippet_structure["params"] = "<redacted>"
+
+    if "plan_output_list" in parameterless_snippet_structure:
+        redacted_plan_output_list = []
+        for plan_output_dict in parameterless_snippet_structure["plan_output_list"]:
+            redacted_plan_output_list.append(_redact_params(plan_output_dict))
+        parameterless_snippet_structure["plan_output_list"] = redacted_plan_output_list
+
+    return parameterless_snippet_structure
+
+
+def _snippet_structure_to_string(s):
+
+    def omit_reason_list(omit_reasons_list):
+        return [omission["reason"] for omission in omit_reasons_list]
+
+    # produce simple list of reasons
+    omit_reasons = []
+    if bool(s["omit_reasons_list"]):
+        omit_reasons = omit_reason_list(s["omit_reasons_list"])
+
+    # if we're omitted by run_selector, there's no need to go on
+    if "run_selector" in omit_reasons:
+        return ""
+
+    num_producing_sub_plans = 0
+
+    # if s just has text, ret = text
+    ret = ""
+    if "plan_output_text" in s:
+        ret = s["plan_output_text"]
+
+    # otherwise if s has a list of other snippet structs
+    elif "plan_output_list" in s:
+        output_tuple_list = []
+        for snip_struct in s["plan_output_list"]:
+            snippet_str = _snippet_structure_to_string(snip_struct)
+            if type(snippet_str) is str and len(snippet_str) > 0:
+                output_tuple_list.append((snip_struct["order"], snippet_str))
+                num_producing_sub_plans += snip_struct["num_changed_plans"]
+
+            print("output_tuple_list: {}".format(output_tuple_list))
+        ret = _text_from_tuple_list(output_tuple_list)
+
+    # if ret is empty return empty string
+    if type(ret) is str and len(ret) < 1:
+        return ""
+
+    # return ret if 1) there's no omissions at all or 2) there's an existing hash for this plan AND there are
+    #  sub-snippets that managed to produce output (i.e. there was a change which prevented an existing hash
+    #  omission in at least one sub-snippet)
+    if not bool(omit_reasons) or ("existing_hash" in omit_reasons and num_producing_sub_plans > 0):
+
+        # there should be a plan name for every plan other than the system plan, and there should also be a hash suffix
+        # for every non-omitted plan
+        if s["plan_name"] is not None:
+            return "{}\n{}\n".format(ret, _hash_stanza_suffix(s["plan_name"], s["params"]))
+        else:
+            return ret
+
+    # otherwise return an empty string
+    return ""
+
+
+def get_playbook_snippet_structure(opts, plan_tree_struct, snippet_depth=0, plan_name=None, parameters=None, order=MIN_PLAN_ORDER):
+
+    omit_reasons_list = []
+
+    if snippet_depth < 1:
+        parameters = _system_level_parameters(opts)
+
+    # case I: a system or non-ansible plan
+    if "plans" in plan_tree_struct:
+        plan_output_list = []
+        if snippet_depth > 0:
+            if "parameters" in plan_tree_struct:
+                print("parameters: {}\n{}".format(parameters, plan_tree_struct["parameters"]))
+                parameters = _merge_args(parameters, plan_tree_struct["parameters"])
+                # parameters = dict(list(parameters) + list(plan_tree_struct["parameters"]))
+        num_changed_plans = 0
+        for plan_dict in plan_tree_struct["plans"]:
+            plan_dict_snippet_output = get_playbook_snippet_structure(opts, plan_dict, snippet_depth=snippet_depth + 1, parameters=parameters)
+            num_changed_plans += plan_dict_snippet_output["num_changed_plans"]
+            if plan_dict_snippet_output is not None:
+                plan_output_list.append(plan_dict_snippet_output)
+
+        # if bool(plan_output_list):
+        #     for plan_output in plan_output_list:
+
+
+        return dict(
+            plan_output_list=plan_output_list,
+            omit_reasons_list=omit_reasons_list,
+            order=order,
+            plan_name=plan_name,
+            params=copy.copy(parameters),
+            node_type="plans",
+            num_changed_plans=num_changed_plans
+        )
+
+    # case II: an entry in a plans list
+    if "plan" in plan_tree_struct:
+        num_changed_plans = 0
+        record_plan_name = plan_tree_struct["plan"]
+
+        # bail if excluded by run_selectors
+        if 'run_selectors' in plan_tree_struct and not run_selector_affirmative(plan_tree_struct['run_selectors']):
+            omit_reasons_list.append(
+                dict(
+                    plan_name=record_plan_name,
+                    reason="run_selector"
+                )
+            )
+
+        if rocket_mode() and plan_hash_filepath_exists(plan=record_plan_name):
+            omit_reasons_list.append(
+                dict(
+                    plan_name=record_plan_name,
+                    reason="existing_hash"
+                )
+            )
+        else:
+            num_changed_plans += 1
+
+        # index and filepath
+        plan_ndx = plan_index(record_plan_name)
+        plan_path = plan_filepath(record_plan_name)
+
+        # read plan yaml contents from file
+        try:
+            fh = open(plan_path, "r")
+            raw_yaml_str = fh.read()
+            fh.close()
+        except TypeError:
+            raise PlanFileDoesNotExist(plan_name)
+
+        if "parameters" in plan_tree_struct:
+            parameters = _merge_args(parameters, plan_tree_struct["parameters"])
+            # parameters = dict(list(parameters) + list(plan_tree_struct["parameters"]))
+
+        # PASS #1 - process the yaml contents to extract params
+        try:
+            if bool(parameters is not None and type(parameters) is dict and bool(parameters)):
+                pass1_rendered_yaml_str = env.from_string(raw_yaml_str).render(parameters)
+                template_render_params = copy.copy(parameters)
+            else:
+                pass1_rendered_yaml_str = env.from_string(raw_yaml_str).render()
+                template_render_params = {}
+            pass1_yaml_struct = yaml.load(pass1_rendered_yaml_str)
+        except yaml.YAMLError as e:
+            print(
+                "ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e),
+                                                                                                            raw_yaml_str))
+            raise
+        except jinja2.TemplateSyntaxError as e:
+            print("ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath))
+            raise
+
+        # PASS #1 - set any parameters that have not been overriden by a declaration in a higher-level scope
+        if bool(
+            'parameters' in pass1_yaml_struct and
+            type(pass1_yaml_struct['parameters']) is dict and
+            bool(pass1_yaml_struct['parameters'])
+        ):
+            for key, val in six.iteritems(pass1_yaml_struct['parameters']):
+                if not bool(key in template_render_params):
+                    template_render_params[key] = val
+
+        # PASS #2 - render the yaml, load to yaml_struct
+        try:
+            if bool(template_render_params):
+                pass2_rendered_yaml_str = env.from_string(raw_yaml_str).render(template_render_params)
+            else:
+                pass2_rendered_yaml_str = env.from_string(raw_yaml_str).render()
+            yaml_struct = yaml.load(pass2_rendered_yaml_str)
+        except (yaml.parser.ParserError, yaml.parser.ScannerError) as e:
+            print("ERR: encountered error({}) parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(type(e), str(e),
+                                                                                                              raw_yaml_str))
+            raise
+        except jinja2.TemplateSyntaxError as e:
+            print("ERR: Template jinja syntax error ({}) in {}".format(str(e), plan_filepath))
+            raise
+
+        # plan is a corrigible plan, recurse
+        if "plans" in yaml_struct:
+            return_dict = get_playbook_snippet_structure(opts, yaml_struct, snippet_depth=snippet_depth + 1, parameters=parameters, order=plan_ndx, plan_name=record_plan_name)
+            return_dict["omit_reasons_list"] = omit_reasons_list if not bool(return_dict["omit_reasons_list"]) else list(omit_reasons_list + return_dict["omit_reasons_list"])
+            return return_dict
+
+        # plan is an ansible plan, return as str
+        return dict(
+            plan_name=record_plan_name,
+            plan_output_text=pass2_rendered_yaml_str,
+            omit_reasons_list=omit_reasons_list,
+            order=plan_ndx,
+            params=copy.copy(parameters),
+            plan_type="plan",
+            num_changed_plans=num_changed_plans
+        )
+
+    # case III: files stanza
+    if "files" in plan_tree_struct:
+        files_order=MIN_PLAN_ORDER
+        if "parameters" in plan_tree_struct["files"]:
+            parameters = _merge_args(parameters, plan_tree_struct["files"]["parameters"])
+            # parameters = dict(list(parameters) + list(plan_tree_struct["files"]["parameters"]))
+            if "order" in plan_tree_struct["files"]["parameters"]:
+                files_order = plan_tree_struct["files"]["parameters"]["order"]
+        files_output_list = _playbook_from_dict__files(plan_tree_struct["files"], parameters)
+        return dict(
+            plan_output_text=_text_from_tuple_list(files_output_list),
+            omit_reasons_list=omit_reasons_list,
+            order=files_order,
+            plan_name=plan_name,
+            params=copy.copy(parameters),
+            plan_type="files",
+            num_changed_plans=0
+        )
+
+    # case IV: inline stanza
+    if "inline" in plan_tree_struct:
+        if 'ansible' not in plan_tree_struct['inline']:
+            raise MalformedInlineAnsibleSnippet()
+        return dict(
+            plan_output_text=yaml.dump(plan_tree_struct['inline']['ansible']),
+            omit_reasons_list=omit_reasons_list,
+            order=plan_tree_struct['inline']['order'] if 'order' in plan_tree_struct['inline'] else MIN_PLAN_ORDER,
+            plan_name=plan_name,
+            params=copy.copy(parameters),
+            plan_type="inline",
+            num_changed_plans=0
+        )
+
+    raise UnknownPlanEncountered()
+
+
+def _system_level_parameters(opts):
+    mconf = system_config(opts)
+    params = mconf['parameters'] if 'parameters' in mconf else {}
+    params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
+    return params
+
+def get_playbook_output__v1(opts):
+
     mconf = system_config(opts)
 
     # get plans and params
     plans = mconf['plans'] if 'plans' in mconf else {}
-    params = mconf['parameters'] if 'parameters' in mconf else {}
-    params = dict(list(params.items()) + list(sys_default_parameters().items()) + list(os.environ.items()))
+    params = _system_level_parameters(opts)
 
     if not bool(plans):
         print("WARN: no plans defined!")
@@ -113,48 +404,13 @@ def write_ansible_playbook(opts):
 
     # get the list output from the plans list
     try:
-        list_output = _playbook_from_list(plans=plans, parameters=params)
+        return _playbook_from_list(plans=plans, parameters=params)
     except PlanFileDoesNotExist as e:
         print("ERR: plan referenced for which no file was found: {}, stack: {}".\
             format(str(e), plan_file_stack_as_str()))
-        return
-
-    # ensure list output is not None
-    if list_output is None:
-        _write_to_playbook("# WARN: No playbook output!\n", opts)
-        return
-
-    # final filtering on playbook output
-    playbook_output = list_output
-    filtered_output = _filter_final_playbook_output(playbook_output)
-
-    # if filtered output is non-empty string, just use the hash prefix, otherwise use hash prefix + filtered output
-    if type(filtered_output) is not str or not bool(filtered_output):
-        playbook_output = _playbook_hashes_prefix(params)
-    else:
-        playbook_output = "{}\n{}".format(_playbook_hashes_prefix(params), filtered_output)
-
-    # write playbook output
-    _write_to_playbook(playbook_output, opts)
+        return None
 
 
-def _write_to_playbook(content, opts):
-    """write content to ansible playbook filepath"""
-    with open(ansible_playbook_filepath(opts), "w") as fh:
-        fh.write(content)
-
-
-def _filter_final_playbook_output(raw):
-    """for right now, just load as yaml and dump it back out...just a placeholder for possible future use"""
-    if type(raw) is not str or not bool(raw):
-        print("INFO: no playbook output to filter")
-        return
-    try:
-        as_struct = yaml.load(raw)
-        as_string = yaml.dump(as_struct) 
-        return as_string
-    except (yaml.ParserError, yaml.ScannerError) as e:
-        print("ERR: encountered error parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(str(e), raw))
 
 
 def _playbook_from_list(**kwargs):
@@ -190,8 +446,10 @@ def _playbook_from_list(**kwargs):
         try:
             # get output from _playbook_from_dict and add to playbook_text_tuple_list
             playbook_dict_tuple = _playbook_from_dict(plans=plans_dict, parameters=playbook_params)
-        except (PlanOmittedByRunSelector, DuplicatePlanInRocketMode):
-            pass
+        except PlanOmittedByRunSelector:
+            print("plan omitted by run selector")
+        except DuplicatePlanInRocketMode:
+            print("plan omitted because of rocket mode hash found")
 
         if playbook_dict_tuple is not None:
             playbook_text_tuple_list.append(playbook_dict_tuple)
@@ -201,41 +459,49 @@ def _playbook_from_list(**kwargs):
             plan_file_stack_pop()
 
     # return text ordered using tuple list
-    return _text_from_tuple_list(*playbook_text_tuple_list)
+
+    if bool(playbook_text_tuple_list):
+        return _text_from_tuple_list(*playbook_text_tuple_list)
+
+    print("NO ACTIONABLE PLANS FOUND")
+    return None
 
 
-def _merge_args(args_base, args_adding):
-    """add two dicts, return merged version"""
-    return dict(list(args_base.items()) + list(args_adding.items()))
+def _playbook_from_dict(plans, parameters):
+    """given a dict containing plans, plan, files, or inline key, return a list containing a tuple
+        of the form (x,y) where x is the order of the playbook snippet and y is the playbook snippet as str"""
+
+    # if parameters defined in plans dict, merge with processed_parameters from overriding contexts
+    processed_parameters = parameters if 'parameters' not in plans else _merge_args(plans['parameters'], parameters)
+
+    if 'plans' in plans:
+        return [(MAX_PLAN_ORDER, _playbook_from_list(plans=plans['plans'], parameters=processed_parameters))]
+
+    # handle plan type: plan file
+    if 'plan' in plans:
+        if 'run_selectors' in plans and not run_selector_affirmative(plans['run_selectors']):
+            raise PlanOmittedByRunSelector()
+        try:
+            return _playbook_from_dict__plan(plans['plan'], processed_parameters)
+        except UnparseablePlanFile as e:
+            print("ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str()))
+            raise
+
+    elif 'files' in plans:
+        return _playbook_from_dict__files(plans['files'], processed_parameters)
+
+    elif 'inline' in plans:
+        if 'ansible' not in plans['inline']:
+            raise MalformedInlineAnsibleSnippet()
+        return _playbook_from_dict__inline(
+            plans['inline']['ansible'],
+            plans['inline']['order'] if 'order' in plans['inline'] else MIN_PLAN_ORDER
+        )
+    else:
+        raise UnknownPlanEncountered()
 
 
-def _text_from_tuple_list(*args):
-    """given a list of tuples of the form: (order, txt), produce a string containing the text fragments
-       ordered according to the order value in the tuples"""
-    retlist = []
-    for tuple_list in args:
-        for playbook_text_tuple in tuple_list:
-            ordernum, playbook_text = playbook_text_tuple
-            heapq.heappush(retlist, (ordernum, playbook_text))
-    ret = ""
-    for plan in sorted(retlist):
-        order, txt = plan
-        ret += "{}\n".format(txt)
-        
-    if not bool(ret):
-        return None
-        
-    return ret
-
-
-def _playbook_from_dict__plan(plan_name, params):
-    """given a plan name and any params from an overriding context, return a list containing a tuple
-    of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
-
-    # raise an exception if rocket mode is on and plan, in its current form, has already been run at some point in
-    # the past
-    if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
-        raise DuplicatePlanInRocketMode
+def _snippet_from_plan_name(plan_name, params):
 
     # index and filepath
     plan_ndx = plan_index(plan_name)
@@ -294,7 +560,16 @@ def _playbook_from_dict__plan(plan_name, params):
     if bool(type(yaml_struct) is dict and 'plans' in yaml_struct):
 
         # corrigible plan, recurse and add rocket mode hash suffix
-        playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params)
+
+        try:
+            # get output from _playbook_from_dict and add to playbook_text_tuple_list
+            playbook_dict_output = _playbook_from_dict(plans=yaml_struct, parameters=params)
+        except PlanOmittedByRunSelector:
+            print("plan omitted by run selector")
+            return None
+        except DuplicatePlanInRocketMode:
+            print("plan omitted because of rocket mode hash found")
+            return None
 
         if bool(playbook_dict_output is not None):
             _, plan_text = playbook_dict_output[0]
@@ -310,13 +585,16 @@ def _playbook_from_dict__plan(plan_name, params):
             raise UnparseablePlanFile()
 
 
-def _str_bool(v):
-    """convert a string rep of yes or true to a boolean True, all else to False"""
-    if (type(v) is str and v.lower() in ['yes', 'true']) or \
-        (type(v) is bool and bool(v)):
-        return True
-    return False
+def _playbook_from_dict__plan(plan_name, params):
+    """given a plan name and any params from an overriding context, return a list containing a tuple
+    of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
 
+    # raise an exception if rocket mode is on and plan, in its current form, has already been run at some point in
+    # the past
+    if rocket_mode() and plan_hash_filepath_exists(plan=plan_name):
+        raise DuplicatePlanInRocketMode
+
+    return _snippet_from_plan_name(plan_name, params)
 
 def _playbook_from_dict__files_list(files_list, params, **kwargs):
     """given the files list and a list of params from an overriding context, return a list containing a tuple
@@ -397,7 +675,7 @@ def _playbook_from_dict__files_list(files_list, params, **kwargs):
     ret = []
     for order_str, txt in six.iteritems(files):
         ret.append((int(order_str), txt))
-    return tuple(ret)
+    return ret
     
     
 def _playbook_from_dict__files_dict(files_dict, params):
@@ -426,38 +704,61 @@ def _playbook_from_dict__inline(snippet, order):
     of the form (x,y) where x is the order number for the plan and y is the playbook output as a string"""
     return [(order, yaml.dump(snippet))]
 
-def _playbook_from_dict(plans, parameters):
-    """given a dict containing plans, plan, files, or inline key, return a list containing a tuple
-        of the form (x,y) where x is the order of the playbook snippet and y is the playbook snippet as str"""
 
-    # if parameters defined in plans dict, merge with processed_parameters from overriding contexts
-    processed_parameters = parameters if 'parameters' not in plans else _merge_args(plans['parameters'], parameters)
+def _str_bool(v):
+    """convert a string rep of yes or true to a boolean True, all else to False"""
+    if (type(v) is str and v.lower() in ['yes', 'true']) or \
+        (type(v) is bool and bool(v)):
+        return True
+    return False
 
-    if 'plans' in plans:
-        return [(MAX_PLAN_ORDER, _playbook_from_list(plans=plans['plans'], parameters=processed_parameters))]
 
-    # handle plan type: plan file
-    if 'plan' in plans:
-        if 'run_selectors' in plans and not run_selector_affirmative(plans['run_selectors']):
-            raise PlanOmittedByRunSelector()
-        try:
-            return _playbook_from_dict__plan(plans['plan'], processed_parameters)
-        except UnparseablePlanFile as e:
-            print("ERR: unparseable plan encountered: {}, stack: {}".format(str(e), plan_file_stack_as_str()))
-            raise
+def _merge_args(args_base, args_adding):
+    """add two dicts, return merged version"""
+    return dict(list(args_base.items()) + list(args_adding.items()))
 
-    elif 'files' in plans:
-        return _playbook_from_dict__files(plans['files'], processed_parameters)
 
-    elif 'inline' in plans:
-        if 'ansible' not in plans['inline']:
-            raise MalformedInlineAnsibleSnippet()
-        return _playbook_from_dict__inline(
-            plans['inline']['ansible'],
-            plans['inline']['order'] if 'order' in plans['inline'] else MIN_PLAN_ORDER
-        )
-    else:
-        raise UnknownPlanEncountered()
+def _text_from_tuple_list(*args):
+    """given a list of tuples of the form: (order, txt), produce a string containing the text fragments
+       ordered according to the order value in the tuples"""
+
+    print("args: {}".format(args))
+
+    retlist = []
+    for tuple_list in args:
+        for playbook_text_tuple in tuple_list:
+            ordernum, playbook_text = playbook_text_tuple
+            heapq.heappush(retlist, (ordernum, playbook_text))
+    ret = ""
+    for plan in sorted(retlist):
+        order, txt = plan
+        ret += "{}\n".format(txt)
+
+    if not bool(ret):
+        return None
+
+    print("returning: {}".format(ret))
+
+    return ret
+
+
+def _write_to_playbook(content, opts):
+    """write content to ansible playbook filepath"""
+    with open(ansible_playbook_filepath(opts), "w") as fh:
+        fh.write(content)
+
+
+def _filter_final_playbook_output(raw):
+    """for right now, just load as yaml and dump it back out...just a placeholder for possible future use"""
+    if type(raw) is not str or not bool(raw):
+        print("INFO: no playbook output to filter")
+        return
+    try:
+        as_struct = yaml.load(raw)
+        as_string = yaml.dump(as_struct)
+        return as_string
+    except (yaml.parser.ParserError, yaml.parser.ScannerError) as e:
+        print("ERR: encountered error({}) parsing playbook output:\n\nERR:\n{}\n\nRAW YAML INPUT:\n{}".format(type(e), str(e), raw))
 
 
 def _playbook_hashes_prefix(params, **kwargs):
