@@ -27,6 +27,21 @@ thereof that gave us the ability:
 playbook code
 * to create automated deployment code for new projects much more quickly
 
+For one-off projects like my personal website or various personal projects, I can include a provision directory in the top-level of the source tree that contains plans, system files and files and use virtualenvwrapper to make my deployments a single-command affair, so I can
+
+    corrigible production
+
+to fire off my latest updates to the server or
+
+    corrigible snapshot-production-database
+
+or
+
+    corrigible load-production-database-snapshot-to-dev-db
+
+**And, extra! extra! read all about it!**
+ you can now use the *--rocket-mode* command-line argument to skip any plans that haven't changed since the last run!!  And it should now work as you'd expect...the implementation prior to March 16, 2017 was not althogether functional.
+
 Before You Begin
 ================
 
@@ -339,10 +354,7 @@ Project Status
 ==============
 The hard parts work and there's tests around key points.  It's been working for a number of projects for nearly two
 years.  I've just (in early 2017) made it python3-friendly and now (in March 2017) I've done a fair bit of cleanup to
-get the code in better shape for a couple of interviews, so the next steps are:
-* to get rocket-mode working in a more useful way (a changed plan should cause the re-execution of every parent plan up
-to the system file...currently, this isn't what happens, so rocket-mode is really only worth using for very shallow
-plan-trees and, unless you really know what you're doing, there's a good chance it's not doing what you think)
+get the code in better shape for a couple of interviews, so the next step is:
 * to allow for optional parallelism in execution based on the ordering (multiple, separate snippets with the same
 sort-order number should be able to run in parallel)
 
@@ -352,7 +364,7 @@ what really hasn't ended up being particularly useful.  As of right now, v2 will
 * provisioning for AWS, GCE, and Digital Ocean will be a part of the language
 * added to the yaml syntax will be a way to include other yaml files
 * rocket mode will be on by default, but will be opt-in for snippets (so everything runs every time, unless otherwise
-directed)
+directed). there will be options to run everything regardless of hash collisions and to treat everything as if it were a candidate for exclusion.
 * there will be constants (see TODO)
 * ability to reference parameter files so multiple system files can reference the same parameter file
 * script hooks (use case: to check to see if the current checkpoint matches the latest in master)
@@ -362,7 +374,7 @@ Also, I've put up a [repository for examples](https://github.com/FredAtLandMetri
 Contact
 =======
 Feedback is welcomed.  Feel free to email me at [fred@frameworklabs.us](mailto:fred@frameworklabs.us).  I do have a bit of a
-spam problem, so please mention corrigible in the subject line.
+spam problem, so please mention *corrigible* in the subject line.
 
 Also, head to [Framework Labs](http://frameworklabs.us) for more information about the sort of work I do.  Please get
 in touch if you have a project you would like help with!
