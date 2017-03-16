@@ -3,22 +3,23 @@
 import unittest
 import os
 import errno
+import subprocess
 import json
 import tempfile
 import shutil
 import copy
 
-from corrigible.lib.plan import plan_index, plan_filepath
-from corrigible.test.lib.corrigible_test import CorrigibleTest
+from lib.plan import plan_index, plan_filepath
+from test.lib.corrigible_test import CorrigibleTest
 
-import corrigible.lib.plan
+import lib.plan
 
-script_dirpath = os.path.join(os.path.dirname(corrigible.lib.plan.__file__), '..', 'test')
+script_dirpath = os.path.join(os.path.dirname(lib.plan.__file__), '..', 'test')
 system_config_dirpath = os.path.join(script_dirpath, 'resources', 'systems')
 plans_config_dirpath = os.path.join(script_dirpath, 'resources', 'plans')
 files_config_dirpath = os.path.join(script_dirpath, 'resources', 'files')
 corrigible_exec_filepath = os.path.join(script_dirpath, '..', 'corrigible')
-hashes_dirpath = '/tmp/corrigible_hashes'
+hashes_dirpath = '/corrigible/hashes'
 
 # os.environ['CORRIGIBLE_SYSTEMS'] = system_config_dirpath
 # os.environ['CORRIGIBLE_PLANS'] = plans_config_dirpath
@@ -52,6 +53,11 @@ class TestSystemParams(CorrigibleTest):
             # os.symlink(files_config_dirpath, os.path.join(tmp_exec_dirpath, os.path.basename(files_config_dirpath)))
 
         return tmp_exec_dirpath
+
+    def cleanup_new_corrigible_environment_dirpath(self):
+        global tmp_exec_dirpath
+        shutil.rmtree(tmp_exec_dirpath)
+        tmp_exec_dirpath = None
 
     def clear_touched_files(self):
         def silentremove(filename):
@@ -95,7 +101,7 @@ class TestSystemParams(CorrigibleTest):
 
         # --- clear hashes dir
         try:
-            shutil.rmtree(hashes_dirpath)
+            subprocess.call(["sudo", "rm", "-rf", hashes_dirpath])
         except FileNotFoundError:
             pass
 
@@ -118,18 +124,27 @@ class TestSystemParams(CorrigibleTest):
 
         # test that very little is in the playbook as expected
         s = self.playbook_as_struct()
-        self.assertTrue(len(s) == 1)
-
-        # self.assertTrue(False)
+        self.assertTrue(s is None)
 
         # change low-level plan
+        shutil.copyfile(
+            os.path.join(plans_config_dirpath, "220_touch_file_c.ansible.yml"),
+            os.path.join(provision_dir["plans"], "210_touch_file_b.ansible.yml")
+        )
 
-        # run corrigible
+        # run corrigible with rocket mode on
+        self.regen(rocket_mode=True)
 
         # test that some stuff still isn't there, but the changed plan and it's parent plan are both present
+        s = self.playbook_as_struct()
+        self.assertTrue(s is not None)
+        self.assertTrue(s[1]["tasks"][0]["name"] == "touch temp file z")
+        self.assertTrue(s[2]["tasks"][0]["name"] == "touch temp file c")
 
-        # delete the temp corrigible environment
-
+        # cleanup
+        # shutil.rmtree(dirpath)
+        self.clear_touched_files()
+        self.cleanup_new_corrigible_environment_dirpath()
 
 
 if __name__ == '__main__':
