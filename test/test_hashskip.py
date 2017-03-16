@@ -53,13 +53,11 @@ class TestLocalConnectForTesting(CorrigibleTest):
         # get rid of the hashes directory to start fresh
         if bool(os.path.isdir(hashes_dirpath)):
             subprocess.call(["sudo", "rm", "-rf", hashes_dirpath])
-            # shutil.rmtree(hashes_dirpath)
 
         # confirm that running the playbook creates the hashes directory
         self.assertFalse(bool(os.path.isdir(hashes_dirpath)))
         self.run_playbook()
         self.assertTrue(bool(os.path.isdir(hashes_dirpath)))
-
 
         # confirm that playbook is length=5 (2 actual tasks, 3 hash-related tasks)
         s = self.playbook_as_struct()
