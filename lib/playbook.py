@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# This module implements write_ansible_playbook(), the function that reads the system plan and all the included
+# sub-plans, produces a plan tree, and converts the plan tree into ansible playbook yaml syntax
+#
 # The previous implementation of write_ansible_playbook was based on functions that walked the plan tree, producing
 # playbook snippets and grafting snippets of any included plans.
 #
