@@ -147,7 +147,7 @@ def write_ansible_playbook(opts):
 
 
 def _snippet_structure_to_string(snippet_struct):
-    """given a snippet structure, return the structure as a workbook snippet"""
+    """given a snippet structure, return the structure as a playbook snippet"""
     def omit_reason_list(omit_reasons_list):
         return [omission["reason"] for omission in omit_reasons_list]
 
