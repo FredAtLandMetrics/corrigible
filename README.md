@@ -201,7 +201,7 @@ corrigible command-line.
 ###The plans section
 
 The plans section tells corrigible what it will be doing to the hosts listed in the hosts section.  It can contain any
-number of references to plan container files, ansible workbook extracts, inline ansible snippets, and file transfer
+number of references to plan container files, ansible playbook extracts, inline ansible snippets, and file transfer
 listings. It's not immediately obvious, but the plans section in the example above contains all four types of
 references.
 
